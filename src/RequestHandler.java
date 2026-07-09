@@ -1,16 +1,22 @@
 public class RequestHandler {
     RaftState raftState;
     LogManager logManager;
+    HeartbeatTracker heartbeatTracker;
 
-    public RequestHandler(RaftState raftState, LogManager logManager){
+    public RequestHandler(RaftState raftState, LogManager logManager, HeartbeatTracker heartbeatTracker){
         this.raftState = raftState;
         this.logManager = logManager;
+        this.heartbeatTracker = heartbeatTracker;
     }
 
     public RequestVoteResponse handleRequestVote(RequestVoteRequest req){
+        heartbeatTracker.updateHeartbeat();
         synchronized (raftState.getLock()){
             if (req.term > raftState.getCurrentTerm()){
-                raftState.setTerm(req.term);
+                synchronized (raftState.getLock()){
+                    raftState.setTerm(req.term);
+                    raftState.setRole("Follower");
+                }
             }
             if (req.term == raftState.getCurrentTerm() && raftState.getVotedFor() == null){
                 raftState.setVotedFor(req.candidateId);
@@ -24,6 +30,7 @@ public class RequestHandler {
 
 
     public AppendEntriesResponse handleAppendEntries(AppendEntriesRequest req){
+        heartbeatTracker.updateHeartbeat();
         synchronized (raftState.getLock()){
             if (req.term > raftState.getCurrentTerm()){
                 raftState.setTerm(req.term);
@@ -33,9 +40,9 @@ public class RequestHandler {
             }
         }
         synchronized (logManager.lock){
-            LogEntry lg = logManager.getLastLog();
-            if (req.leaderCommit > logManager.getCommitIndex()) logManager.setCommitIndex(req.leaderCommit);
-            if (req.prevLogIndex == lg.index && req.prevLogTerm == lg.term){
+            LogEntry lg = logManager.get(req.prevLogIndex);
+            if (lg != null && req.leaderCommit > logManager.getCommitIndex()) logManager.setCommitIndex(req.leaderCommit);
+            if (lg != null && req.prevLogIndex == lg.index && req.prevLogTerm == lg.term){
                 return new AppendEntriesResponse(raftState.getCurrentTerm(), true);
             }
 

@@ -2,7 +2,7 @@ public class RaftState {
    private volatile int currentTerm = 0;
    private Integer votedFor = null;
    private String role = "Follower";
-   private Object lock = new Object();
+   private Object lock = this;
 
 
    public synchronized boolean becomeCandidate(Integer nodeId){

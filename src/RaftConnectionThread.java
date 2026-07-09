@@ -4,14 +4,12 @@ import java.net.Socket;
 import java.util.Arrays;
 
 public class RaftConnectionThread implements Runnable {
-    RaftNode raftNode;
     Socket socket;
     RequestHandler requestHandler;
     ReplicationManager replicationManager;
     
 
-    public RaftConnectionThread(RaftNode raftNode, Socket socket, RequestHandler requestHandler, ReplicationManager replicationManager){
-        this.raftNode = raftNode;
+    public RaftConnectionThread(Socket socket, RequestHandler requestHandler, ReplicationManager replicationManager){
         this.socket = socket;
         this.requestHandler = requestHandler;
         this.replicationManager = replicationManager;

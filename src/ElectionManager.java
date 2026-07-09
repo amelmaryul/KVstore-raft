@@ -11,13 +11,14 @@ public class ElectionManager {
     LogManager logManager;
     int nodeId;
     List<Integer> ports;
-    RaftMessaging raftMessaging = new RaftMessaging();
+    RaftMessaging raftMessaging;
 
-    public ElectionManager(RaftState raftState, int nodeId, List<Integer> ports, LogManager logManager){
+    public ElectionManager(RaftState raftState, int nodeId, List<Integer> ports, LogManager logManager, RaftMessaging raftMessaging){
         this.raftState = raftState;
         this.nodeId = nodeId;
         this.ports = ports;
         this.logManager = logManager;
+        this.raftMessaging = raftMessaging;
     }
 
 
@@ -28,25 +29,24 @@ public class ElectionManager {
         CountDownLatch latch = new CountDownLatch(ports.size() -1);
 
         for (int port : ports){
-            if (port == nodeId) continue;
+            if (port == this.nodeId) continue;
 
                 new Thread(() -> {
 
                     try{
+                        int count = 0;
                         LogEntry lg = logManager.getLastLog();
-                        RequestVoteRequest req = new RequestVoteRequest(raftState.getCurrentTerm(), nodeId, lg.index, lg.term); // i need the create lastLogIndex and lastLogTerm
+                        RequestVoteRequest req = new RequestVoteRequest(raftState.getCurrentTerm(), nodeId, lg.index, lg.term);
                         RequestVoteResponse response = (RequestVoteResponse) raftMessaging.sendRequest(port, req);
 
 
-
-
-
                         if (response != null && response.voteGranted){
-                            votesReceived.incrementAndGet();
+                            count = votesReceived.incrementAndGet();
+                            System.out.println("Voted recieved current count: " + String.valueOf(count));
+
                         }  
                         else if (response != null && response.term > raftState.getCurrentTerm()){
                             raftState.setTerm(response.term);
-                            raftState.setVotedFor(null);
                         }
 
 

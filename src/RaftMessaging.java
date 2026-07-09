@@ -6,8 +6,8 @@ import java.net.Socket;
 public class RaftMessaging {
 
     public Message sendRequest(int port, Message req){
-        try{
-            Socket socket = new Socket("localhost", port);
+        try (Socket socket = new Socket("localhost", port)) {
+            
             socket.setSoTimeout(200);
             ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
             ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
@@ -18,7 +18,6 @@ public class RaftMessaging {
             
 
         } catch (Exception e){
-            e.printStackTrace();
             return null;
         }
     }
@@ -34,7 +33,6 @@ public class RaftMessaging {
 
 
         } catch (Exception e){
-            e.printStackTrace();
             return null;
         }
     }

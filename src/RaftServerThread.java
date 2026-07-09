@@ -2,22 +2,24 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 public class RaftServerThread implements Runnable {
-    RaftNode raftNode;
+    RequestHandler requestHandler;
+    ReplicationManager replicationManager;
+    int nodeId;
 
-
-    public RaftServerThread(RaftNode raftNode){
-        this.raftNode = raftNode;
-
+    public RaftServerThread(int nodeId, RequestHandler requestHandler, ReplicationManager replicationManager){
+        this.requestHandler = requestHandler;
+        this.replicationManager = replicationManager;
+        this.nodeId = nodeId;
     }
     
 
     public void run(){
         try{
-            ServerSocket server = new ServerSocket(raftNode.nodeId);
+            ServerSocket server = new ServerSocket(nodeId);
             
             while (true){
                 Socket socket = server.accept();
-                Thread thread = new Thread(new RaftConnectionThread(raftNode, socket));
+                Thread thread = new Thread(new RaftConnectionThread(socket, requestHandler, replicationManager));
                 thread.start();
             }
 

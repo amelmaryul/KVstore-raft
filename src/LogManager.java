@@ -9,7 +9,9 @@ public class LogManager{
     Object lock = new Object();
 
 
-
+    public LogManager(){
+        log.add(new LogEntry(null, 0, 0));
+    }
 
 
 
@@ -26,9 +28,20 @@ public class LogManager{
 
     public LogEntry getLastLog(){
         synchronized (lock){
-            int size = size();
-            return log.get(size-1); 
+            int size = this.size();
+            return this.get(size-1); 
         }
+    }
+
+    public List<LogEntry> getFrom(int startIndex){
+        List<LogEntry> res = new ArrayList<>();
+        synchronized (lock){
+            for (; startIndex < log.size(); startIndex++){
+                res.add(log.get(startIndex));
+            }
+            return res;
+        }
+       
     }
 
     public int size(){
