@@ -49,7 +49,7 @@ public class RaftNode {
         thread.start();
 
 
-/* 
+
         new Thread(() -> {
             try{
 
@@ -57,11 +57,14 @@ public class RaftNode {
                     String[] command = storageEngine.queue.take();
                     logManager.append(new LogEntry(command, raftState.getCurrentTerm(), logManager.size()));
                     if (raftState.getRole().equals("Leader")){
+                        System.out.println("[LeaderReplication] Propagating the Command!");
                         for (int port : ports){
+                            if (port == nodeId) continue;
                         new Thread(() -> {
-                                leaderReplicationManager.sendLogs(port, logManager.getFrom(port));
+                                leaderReplicationManager.sendLogs(port, logManager.getFrom(replicationState.getNextIndex(port)));
                         }).start();
                         }
+
                     }
                 }
             } catch (Exception e){
@@ -73,11 +76,13 @@ public class RaftNode {
         new Thread(() -> {
             while (true) {
                 while (logManager.getLastApplied() < logManager.getCommitIndex()) {
+                    System.out.println("[Local Replication Manager] trying to update the RSM!");
                     LogEntry entry = logManager.get(logManager.getLastApplied() + 1);
                     String[] command = entry.command;
 
                     if (command[0].equals("set")) {
                         storageEngine.set(command[1], command[2]);
+                        System.out.println("[Local Replicaotn Manager] Updated RSM");
                     } else if (command[0].equals("delete")) {
                         storageEngine.delete(command[1]);
                     }
@@ -91,7 +96,7 @@ public class RaftNode {
                 }
             }
         }).start();
-*/
+
 
         while (true){
             String role = raftState.getRole();
@@ -114,6 +119,7 @@ public class RaftNode {
                 if (isLeader){
                     raftState.setRole("Leader");
                     System.out.println("[Leader] I am the Leader. Term: " + String.valueOf(raftState.getCurrentTerm()));
+                    replicationState.reInitializeState();
                 }
                 else {
                     raftState.setRole("Follower");
@@ -121,8 +127,8 @@ public class RaftNode {
                 }
             } 
 
-            else if (role.equals("Leader")) //leader.doleaderActivity(); // should shit be a mega objects that calls smaller objects that handle all the leader stuff. i would need a lot though. i would need something that can hold matchindex and all that stuff. im gonna need somethign to manage the raftmessaging system and handle all that stuff theres a lot to do it feels like
-            {
+            else if (role.equals("Leader")) 
+            { // sending heartbeats.
                 for (int port : ports){
                     if (port == nodeId) continue;
 
@@ -133,6 +139,7 @@ public class RaftNode {
 
                     }).start();
                 }
+                updateCommit();
                 
                  try {
                         Thread.sleep(75);
@@ -141,6 +148,27 @@ public class RaftNode {
                 }
 
             }
+        }
+    }
+
+
+
+
+
+
+    public void updateCommit(){
+        synchronized (replicationState){
+            int n = ports.size();
+            int[] arr = new int[n];
+
+            for (int i = 0; i < n; i++){
+                arr[i] = replicationState.getMatchIndex(ports.get(i));
+            }
+            Arrays.sort(arr);
+
+            int mid = n /2;
+
+            logManager.setCommitIndex(arr[mid]);
         }
     }
 

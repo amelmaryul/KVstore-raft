@@ -2,6 +2,7 @@ public class RequestHandler {
     RaftState raftState;
     LogManager logManager;
     HeartbeatTracker heartbeatTracker;
+    ReplicationState replicationState;
 
     public RequestHandler(RaftState raftState, LogManager logManager, HeartbeatTracker heartbeatTracker){
         this.raftState = raftState;
@@ -10,7 +11,6 @@ public class RequestHandler {
     }
 
     public RequestVoteResponse handleRequestVote(RequestVoteRequest req){
-        heartbeatTracker.updateHeartbeat();
         synchronized (raftState.getLock()){
             if (req.term > raftState.getCurrentTerm()){
                 synchronized (raftState.getLock()){
@@ -19,6 +19,7 @@ public class RequestHandler {
                 }
             }
             if (req.term == raftState.getCurrentTerm() && raftState.getVotedFor() == null){
+                heartbeatTracker.updateHeartbeat();
                 raftState.setVotedFor(req.candidateId);
                 return new RequestVoteResponse(raftState.getCurrentTerm(), true);
             }
@@ -35,6 +36,7 @@ public class RequestHandler {
             if (req.term > raftState.getCurrentTerm()){
                 raftState.setTerm(req.term);
             }
+            if (logManager.getCommitIndex() < req.leaderCommit) logManager.setCommitIndex(req.leaderCommit);
             if (req.entries == null && req.term == raftState.getCurrentTerm()){
                 return new AppendEntriesResponse(raftState.getCurrentTerm(), true);
             }

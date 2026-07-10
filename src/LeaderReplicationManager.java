@@ -1,3 +1,5 @@
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.List;
 
@@ -20,13 +22,16 @@ public class LeaderReplicationManager {
     public boolean sendLogs(int port, List<LogEntry> entries){
         try (Socket socket = new Socket("localhost", port)) {
 
+            ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
+            ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
+
             int nextIndex = replicationState.getNextIndex(port);
             LogEntry lg = logManager.get(nextIndex-1);
             LogEntry lastEntry = entries.getLast();
 
             AppendEntriesRequest req = new AppendEntriesRequest(raftState.getCurrentTerm(), nodeId, lg.index, lg.term, entries, logManager.getCommitIndex());
 
-            AppendEntriesResponse response = (AppendEntriesResponse) raftMessaging.sendRequest(socket, req);
+            AppendEntriesResponse response = (AppendEntriesResponse) raftMessaging.sendRequest(socket, out, in, req);
 
 
             while (!response.success){
@@ -38,7 +43,7 @@ public class LeaderReplicationManager {
                 lg = logManager.get(nextIndex-1);
 
                 req = new AppendEntriesRequest(raftState.getCurrentTerm(), nodeId, lg.index, lg.term, entries, logManager.getCommitIndex());
-                response = (AppendEntriesResponse) raftMessaging.sendRequest(socket, req);
+                response = (AppendEntriesResponse) raftMessaging.sendRequest(socket, out, in, req);
             }
             replicationState.setMatchIndex(port, lastEntry.index);
             replicationState.setNextIndex(port, lastEntry.index+1);

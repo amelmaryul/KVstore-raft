@@ -6,7 +6,7 @@ public class LogManager{
     private List<LogEntry> log = new ArrayList<>();
     private volatile int committedIndex = 0;
     private int lastApplied = 0;
-    Object lock = new Object();
+    Object lock = this;
 
 
     public LogManager(){

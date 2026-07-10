@@ -37,5 +37,18 @@ public class RaftMessaging {
         }
     }
 
+    public Message sendRequest(Socket socket, ObjectOutputStream out, ObjectInputStream in, Message req){
+        try{
+            out.writeObject(req);
+            out.flush();
+
+            return (Message) in.readObject();
+
+
+        } catch (Exception e){
+            return null;
+        }
+    }
+
     
 }
