@@ -1,8 +1,23 @@
+
 public class RaftState {
    private volatile int currentTerm = 0;
    private Integer votedFor = null;
    private String role = "Follower";
    private Object lock = this;
+   FileStore fileStore;
+
+   public RaftState(FileStore fileStore){
+    this.fileStore = fileStore;
+    int[] arr = fileStore.initializeRaftState();
+    if (arr != null){
+        this.currentTerm = arr[0];
+        this.votedFor = arr[1];
+    }
+    else {
+        this.currentTerm = 0;
+        this.votedFor = null;
+    }
+  }
 
 
    public synchronized boolean becomeCandidate(Integer nodeId){
@@ -11,6 +26,7 @@ public class RaftState {
     }
     this.currentTerm++;
     this.votedFor = nodeId;
+    fileStore.updateRaftState(this.currentTerm, nodeId);
     return true;
    }
 
@@ -22,6 +38,12 @@ public class RaftState {
    public synchronized void setTerm(int term){
     this.currentTerm = term;
     this.votedFor = null;
+    fileStore.updateRaftState(this.currentTerm, this.votedFor);
+   }
+   public synchronized void setTerm(int term, Integer votedFor){
+    this.currentTerm = term;
+    this.votedFor = votedFor;
+    fileStore.updateRaftState(this.currentTerm, this.votedFor);
    }
 
    public synchronized int getCurrentTerm(){

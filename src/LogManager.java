@@ -7,10 +7,14 @@ public class LogManager{
     private volatile int committedIndex = 0;
     private int lastApplied = 0;
     Object lock = this;
+    FileStore fileStore;
 
 
-    public LogManager(){
-        log.add(new LogEntry(null, 0, 0));
+    public LogManager(FileStore fileStore){
+        this.fileStore = fileStore;
+        log = fileStore.initializeLogs();
+        if (log == null) log = new ArrayList<>();
+        log.add(0, new LogEntry(null, 0, 0));
     }
 
 
@@ -52,13 +56,23 @@ public class LogManager{
 
     public void append(LogEntry logEntry){
         synchronized (lock){
+            fileStore.appendLog(logEntry);
             log.add(logEntry);
         } 
     }
 
     public void append(int index, LogEntry logEntry){
         synchronized (lock){
+            fileStore.appendLog(logEntry);
             log.add(index, logEntry);
+        }
+    }
+
+    public void truncate(int index){
+        synchronized (lock){
+            while (log.size() > index){
+                log.removeLast();
+            }
         }
     }
 

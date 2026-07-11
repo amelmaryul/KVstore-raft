@@ -12,10 +12,13 @@ public class ReplicationManager {
         synchronized (logManager.lock){
             LogEntry firsEntry = entries.get(0);
             LogEntry lastEntry = entries.get(entries.size()-1);
+            logManager.truncate(firsEntry.index);
+            logManager.fileStore.trunacate(firsEntry.index);
 
-            for (int i = firsEntry.index; i<lastEntry.index +1; i++){
-                logManager.append(i, lastEntry);
+            for (LogEntry entry : entries){
+                logManager.append(entry);
             }
+            
         }
     }
     

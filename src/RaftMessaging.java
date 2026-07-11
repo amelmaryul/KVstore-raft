@@ -8,7 +8,7 @@ public class RaftMessaging {
     public Message sendRequest(int port, Message req){
         try (Socket socket = new Socket("localhost", port)) {
             
-            socket.setSoTimeout(200);
+            socket.setSoTimeout(500);
             ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
             ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
             out.writeObject(req);

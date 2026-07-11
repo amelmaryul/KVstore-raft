@@ -26,14 +26,16 @@ public class RaftNode {
     LeaderReplicationManager leaderReplicationManager;
     RequestHandler requestHandler;
     ReplicationManager replicationManager;
+    FileStore fileStore;
 
     public RaftNode(int nodeId){
         this.nodeId = nodeId;
 
+        this.fileStore = new FileStore(nodeId);
         ports = new ArrayList<>(Arrays.asList(5051,5052,5053, 5054, 5055));
         storageEngine = StorageEngine.getInstance();
-        raftState = new RaftState();
-        logManager = new LogManager();
+        raftState = new RaftState(fileStore);
+        logManager = new LogManager(fileStore);
         heartbeatTracker = new HeartbeatTracker();
         raftMessaging = new RaftMessaging();
         replicationState = new ReplicationState(logManager, ports);
@@ -158,6 +160,7 @@ public class RaftNode {
 
     public void updateCommit(){
         synchronized (replicationState){
+            replicationState.setMatchIndex(nodeId, logManager.size()-1);
             int n = ports.size();
             int[] arr = new int[n];
 

@@ -13,12 +13,12 @@ public class RequestHandler {
     public RequestVoteResponse handleRequestVote(RequestVoteRequest req){
         synchronized (raftState.getLock()){
             if (req.term > raftState.getCurrentTerm()){
-                synchronized (raftState.getLock()){
-                    raftState.setTerm(req.term);
-                    raftState.setRole("Follower");
-                }
+                raftState.setTerm(req.term, req.candidateId);
+                heartbeatTracker.updateHeartbeat();
+                return new RequestVoteResponse(raftState.getCurrentTerm(), true);
+                
             }
-            if (req.term == raftState.getCurrentTerm() && raftState.getVotedFor() == null){
+            else if (req.term == raftState.getCurrentTerm() && raftState.getVotedFor() == null){
                 heartbeatTracker.updateHeartbeat();
                 raftState.setVotedFor(req.candidateId);
                 return new RequestVoteResponse(raftState.getCurrentTerm(), true);
