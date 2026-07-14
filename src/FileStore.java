@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class FileStore {
-    int nodeId;
+    String nodeId;
     String logFile;
     String stateFile;
     PrintWriter pw;
@@ -24,7 +24,7 @@ public class FileStore {
     Object logLock = new Object();
     
 
-    public FileStore(int nodeId){
+    public FileStore(String nodeId){
         this.nodeId = nodeId;
         logFile = "../" + String.valueOf(nodeId) + "-logs.txt";
         stateFile = "../" + String.valueOf(nodeId) + "-state.txt";
@@ -57,10 +57,10 @@ public class FileStore {
     }
 
 
-    public boolean updateRaftState(int term, Integer votedFor){
+    public boolean updateRaftState(int term, String votedFor){
         synchronized (stateLock){
             try {
-                votedFor = (votedFor == null) ? -1 : votedFor;
+                votedFor = (votedFor == null) ? " " : votedFor;
                 PrintWriter printWriter = new PrintWriter(new FileWriter(stateFile));
                 printWriter.println("term," + String.valueOf(term));
                 printWriter.println("votedFor," + String.valueOf(votedFor));

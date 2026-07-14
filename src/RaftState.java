@@ -1,31 +1,36 @@
 
 public class RaftState {
    private volatile int currentTerm = 0;
-   private Integer votedFor = null;
+   private String votedFor = null;
    private String role = "Follower";
    private Object lock = this;
    FileStore fileStore;
 
    public RaftState(FileStore fileStore){
     this.fileStore = fileStore;
-    int[] arr = fileStore.initializeRaftState();
+    //int[] arr = fileStore.initializeRaftState();
+    /*
     if (arr != null){
         this.currentTerm = arr[0];
-        this.votedFor = arr[1];
+        this.votedFor = String.valueOf(arr[1]); // temporary fix. make sure this maps out
     }
     else {
         this.currentTerm = 0;
         this.votedFor = null;
     }
+        */
+
+
   }
 
 
-   public synchronized boolean becomeCandidate(Integer nodeId){
+   public synchronized boolean becomeCandidate(String nodeId){
     if (!this.role.equals("Candidate")){
         return false;
     }
     this.currentTerm++;
     this.votedFor = nodeId;
+    System.out.println("Updated term to: " + String.valueOf(this.currentTerm));
     fileStore.updateRaftState(this.currentTerm, nodeId);
     return true;
    }
@@ -33,28 +38,32 @@ public class RaftState {
 
    public synchronized void incrementTerm(){
     this.currentTerm++;
+    System.out.println("Updated term to: " + String.valueOf(this.currentTerm));
    }
 
    public synchronized void setTerm(int term){
     this.currentTerm = term;
     this.votedFor = null;
     fileStore.updateRaftState(this.currentTerm, this.votedFor);
+    System.out.println("Updated term to: " + String.valueOf(term));
    }
-   public synchronized void setTerm(int term, Integer votedFor){
+   public synchronized void setTerm(int term, String votedFor){
     this.currentTerm = term;
     this.votedFor = votedFor;
+    this.role = "Follower";
     fileStore.updateRaftState(this.currentTerm, this.votedFor);
+    System.out.println("Updated term to: " + String.valueOf(term));
    }
 
    public synchronized int getCurrentTerm(){
     return this.currentTerm;
    }
 
-   public synchronized void setVotedFor(Integer node){
+   public synchronized void setVotedFor(String node){
     this.votedFor = node;
    }
 
-   public synchronized Integer getVotedFor(){
+   public synchronized String getVotedFor(){
     return this.votedFor;
    }
 

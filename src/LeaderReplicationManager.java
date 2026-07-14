@@ -8,9 +8,9 @@ public class LeaderReplicationManager {
     ReplicationState replicationState;
     LogManager logManager;
     RaftState raftState;
-    int nodeId;
+    String nodeId;
     
-    public LeaderReplicationManager(RaftMessaging raftMessaging, ReplicationState replicationState, LogManager logManager, RaftState raftState, int nodeId){
+    public LeaderReplicationManager(RaftMessaging raftMessaging, ReplicationState replicationState, LogManager logManager, RaftState raftState, String nodeId){
         this.raftMessaging = raftMessaging;
         this.replicationState = replicationState;
         this.logManager = logManager;
@@ -19,13 +19,13 @@ public class LeaderReplicationManager {
     }
 
 
-    public boolean sendLogs(int port, List<LogEntry> entries){
-        try (Socket socket = new Socket("localhost", port)) {
+    public boolean sendLogs(String node, List<LogEntry> entries){
+        try (Socket socket = new Socket(node, 8081)) {
 
             ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
             ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
 
-            int nextIndex = replicationState.getNextIndex(port);
+            int nextIndex = replicationState.getNextIndex(node);
             LogEntry lg = logManager.get(nextIndex-1);
             LogEntry lastEntry = entries.getLast();
 
@@ -36,17 +36,17 @@ public class LeaderReplicationManager {
 
             while (!response.success){
 
-                replicationState.setNextIndex(port, nextIndex-1);
+                replicationState.setNextIndex(node, nextIndex-1);
                 entries = logManager.getFrom(nextIndex);
 
-                nextIndex = replicationState.getNextIndex(port);
+                nextIndex = replicationState.getNextIndex(node);
                 lg = logManager.get(nextIndex-1);
 
                 req = new AppendEntriesRequest(raftState.getCurrentTerm(), nodeId, lg.index, lg.term, entries, logManager.getCommitIndex());
                 response = (AppendEntriesResponse) raftMessaging.sendRequest(socket, out, in, req);
             }
-            replicationState.setMatchIndex(port, lastEntry.index);
-            replicationState.setNextIndex(port, lastEntry.index+1);
+            replicationState.setMatchIndex(node, lastEntry.index);
+            replicationState.setNextIndex(node, lastEntry.index+1);
             // maybe also update commit idk. 
             return true;
 

@@ -14,8 +14,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class RaftNode {
 
-    int nodeId;
+    String nodeId;
     List<Integer> ports;
+    List<String> nodes;
     StorageEngine storageEngine;
     RaftState raftState;
     LogManager logManager;
@@ -28,22 +29,26 @@ public class RaftNode {
     ReplicationManager replicationManager;
     FileStore fileStore;
 
-    public RaftNode(int nodeId){
+    public RaftNode(String nodeId){
         this.nodeId = nodeId;
 
         this.fileStore = new FileStore(nodeId);
         ports = new ArrayList<>(Arrays.asList(5051,5052,5053, 5054, 5055));
+        nodes = new ArrayList<>(Arrays.asList(System.getenv("NODES").split(",")));
         storageEngine = StorageEngine.getInstance();
         raftState = new RaftState(fileStore);
         logManager = new LogManager(fileStore);
         heartbeatTracker = new HeartbeatTracker();
         raftMessaging = new RaftMessaging();
-        replicationState = new ReplicationState(logManager, ports);
+        replicationState = new ReplicationState(logManager, nodes);
 
-        electionManager = new ElectionManager(raftState, nodeId, ports, logManager, raftMessaging);
+        electionManager = new ElectionManager(raftState, nodeId, nodes, logManager, raftMessaging);
         leaderReplicationManager = new LeaderReplicationManager(raftMessaging, replicationState, logManager, raftState, nodeId);
         requestHandler = new RequestHandler(raftState, logManager, heartbeatTracker);
         replicationManager = new ReplicationManager(logManager);
+
+
+        System.out.println("Term: " + String.valueOf(raftState.getCurrentTerm()));
     }
 
     public void start(){
@@ -60,10 +65,10 @@ public class RaftNode {
                     logManager.append(new LogEntry(command, raftState.getCurrentTerm(), logManager.size()));
                     if (raftState.getRole().equals("Leader")){
                         System.out.println("[LeaderReplication] Propagating the Command!");
-                        for (int port : ports){
-                            if (port == nodeId) continue;
+                        for (String node : nodes){
+                            if (node.equals(nodeId)) continue;
                         new Thread(() -> {
-                                leaderReplicationManager.sendLogs(port, logManager.getFrom(replicationState.getNextIndex(port)));
+                                leaderReplicationManager.sendLogs(node, logManager.getFrom(replicationState.getNextIndex(node)));
                         }).start();
                         }
 
@@ -100,6 +105,7 @@ public class RaftNode {
         }).start();
 
 
+        heartbeatTracker.updateHeartbeat();
         while (true){
             String role = raftState.getRole();
 
@@ -117,6 +123,7 @@ public class RaftNode {
             }
 
             else if (role.equals("Candidate")){
+                System.out.println("Starting Election");
                 boolean isLeader = electionManager.startElection();
                 if (isLeader){
                     raftState.setRole("Leader");
@@ -124,27 +131,29 @@ public class RaftNode {
                     replicationState.reInitializeState();
                 }
                 else {
+                    System.out.println("Election Lost");
                     raftState.setRole("Follower");
                     heartbeatTracker.updateHeartbeat();
+                    heartbeatTracker.updateElectionTimeout();
                 }
             } 
 
             else if (role.equals("Leader")) 
             { // sending heartbeats.
-                for (int port : ports){
-                    if (port == nodeId) continue;
+                for (String node : nodes){
+                    if (node.equals(nodeId)) continue;
 
                     new Thread(() -> {
                         LogEntry lg = logManager.getLastLog();
                         AppendEntriesRequest req = new AppendEntriesRequest(raftState.getCurrentTerm(), nodeId, lg.index, lg.term, null, logManager.getCommitIndex());
-                        AppendEntriesResponse response = (AppendEntriesResponse) raftMessaging.sendRequest(port, req);
+                        AppendEntriesResponse response = (AppendEntriesResponse) raftMessaging.sendRequest(node, req);
 
                     }).start();
                 }
                 updateCommit();
                 
                  try {
-                        Thread.sleep(75);
+                        Thread.sleep(1000);
                     } catch (Exception e){
                         e.printStackTrace();
                 }
@@ -161,11 +170,11 @@ public class RaftNode {
     public void updateCommit(){
         synchronized (replicationState){
             replicationState.setMatchIndex(nodeId, logManager.size()-1);
-            int n = ports.size();
+            int n = nodes.size();
             int[] arr = new int[n];
 
             for (int i = 0; i < n; i++){
-                arr[i] = replicationState.getMatchIndex(ports.get(i));
+                arr[i] = replicationState.getMatchIndex(nodes.get(i));
             }
             Arrays.sort(arr);
 
@@ -179,8 +188,8 @@ public class RaftNode {
 
     
     public static void main(String[] args){
-        System.out.println("RaftServer Open at Port: " + String.valueOf(args[1]));
-        RaftNode node = new RaftNode(Integer.valueOf(args[1]));
+        System.out.println("RaftServer Open at Port: " + System.getenv("NODE_ID"));
+        RaftNode node = new RaftNode(System.getenv("NODE_ID"));
         node.start();
     }
 }

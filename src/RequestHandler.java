@@ -34,7 +34,7 @@ public class RequestHandler {
         heartbeatTracker.updateHeartbeat();
         synchronized (raftState.getLock()){
             if (req.term > raftState.getCurrentTerm()){
-                raftState.setTerm(req.term);
+                raftState.setTerm(req.term, null);
             }
             if (logManager.getCommitIndex() < req.leaderCommit) logManager.setCommitIndex(req.leaderCommit);
             if (req.entries == null && req.term == raftState.getCurrentTerm()){

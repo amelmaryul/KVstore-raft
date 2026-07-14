@@ -1,7 +1,7 @@
 public class HeartbeatTracker {
 
     volatile long lastHeartbeat = 0;
-    long electionTimeout = 150 + (long)(Math.random() * 151); 
+    long electionTimeout = 1500 + (long)(Math.random() * 2001); 
     
     
 
@@ -15,7 +15,7 @@ public class HeartbeatTracker {
     }
 
     public synchronized void updateElectionTimeout(){
-        this.electionTimeout = 150 + (long)(Math.random() * 151);
+        this.electionTimeout = 1500 + (long)(Math.random() * 2001);
     }
 
     public synchronized void updateElectionTimeout(long newElectionTimeout){

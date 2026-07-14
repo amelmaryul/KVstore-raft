@@ -9,14 +9,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ElectionManager {
     RaftState raftState;
     LogManager logManager;
-    int nodeId;
-    List<Integer> ports;
+    String nodeId;
+    List<String> nodes;
     RaftMessaging raftMessaging;
 
-    public ElectionManager(RaftState raftState, int nodeId, List<Integer> ports, LogManager logManager, RaftMessaging raftMessaging){
+    public ElectionManager(RaftState raftState, String nodeId, List<String> nodes, LogManager logManager, RaftMessaging raftMessaging){
         this.raftState = raftState;
         this.nodeId = nodeId;
-        this.ports = ports;
+        this.nodes = nodes;
         this.logManager = logManager;
         this.raftMessaging = raftMessaging;
     }
@@ -26,10 +26,10 @@ public class ElectionManager {
         if (!raftState.becomeCandidate(nodeId)) return false;
 
         AtomicInteger votesReceived = new AtomicInteger(1);
-        CountDownLatch latch = new CountDownLatch(ports.size() -1);
+        CountDownLatch latch = new CountDownLatch(nodes.size() -1);
 
-        for (int port : ports){
-            if (port == this.nodeId) continue;
+        for (String node : nodes){
+            if (node.equals(this.nodeId)) continue;
 
                 new Thread(() -> {
 
@@ -37,7 +37,7 @@ public class ElectionManager {
                         int count = 0;
                         LogEntry lg = logManager.getLastLog();
                         RequestVoteRequest req = new RequestVoteRequest(raftState.getCurrentTerm(), nodeId, lg.index, lg.term);
-                        RequestVoteResponse response = (RequestVoteResponse) raftMessaging.sendRequest(port, req);
+                        RequestVoteResponse response = (RequestVoteResponse) raftMessaging.sendRequest(node, req);
 
 
                         if (response != null && response.voteGranted){
@@ -46,7 +46,8 @@ public class ElectionManager {
 
                         }  
                         else if (response != null && response.term > raftState.getCurrentTerm()){
-                            raftState.setTerm(response.term);
+                            System.out.println("My term is behind and will update it");
+                            raftState.setTerm(response.term, null);
                         }
 
 
@@ -60,7 +61,7 @@ public class ElectionManager {
         try{
 
             latch.await(500, TimeUnit.MILLISECONDS);
-            if (votesReceived.get() > ports.size() / 2 && raftState.getRole().equals(("Candidate"))){
+            if (votesReceived.get() > nodes.size() / 2 && raftState.getRole().equals(("Candidate"))){
                 return true;
             }
 

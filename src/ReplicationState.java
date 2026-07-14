@@ -4,41 +4,41 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class ReplicationState {
     LogManager logManager;
-    List<Integer> ports;
+    List<String> nodes;
 
-    private final Map<Integer, Integer> nextIndex = new ConcurrentHashMap<>();
-    private final Map<Integer, Integer> matchIndex = new ConcurrentHashMap<>();
+    private final Map<String, Integer> nextIndex = new ConcurrentHashMap<>();
+    private final Map<String, Integer> matchIndex = new ConcurrentHashMap<>();
 
-    public ReplicationState(LogManager logManager, List<Integer> ports){
+    public ReplicationState(LogManager logManager, List<String> nodes){
         this.logManager = logManager;
-        this.ports = ports;
+        this.nodes = nodes;
     }
 
 
     public synchronized void reInitializeState(){
         synchronized (logManager.lock){
             int size = logManager.size();
-            for (int port: ports){
-                matchIndex.put(port, 0);
-                nextIndex.put(port, size);
+            for (String node: nodes){
+                matchIndex.put(node, 0);
+                nextIndex.put(node, size);
             }
         }
     }
 
 
-    public int getNextIndex(int port){
+    public int getNextIndex(String port){
         return nextIndex.get(port);
     }
 
-    public void setNextIndex(int port, int index){
+    public void setNextIndex(String port, int index){
         nextIndex.put(port, index);
     }
 
-    public int getMatchIndex(int port){
+    public int getMatchIndex(String port){
         return matchIndex.get(port);
     }
 
-    public void setMatchIndex(int port, int index){
+    public void setMatchIndex(String port, int index){
         matchIndex.put(port, index);
     }
     

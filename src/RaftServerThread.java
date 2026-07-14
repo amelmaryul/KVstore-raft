@@ -4,9 +4,9 @@ import java.net.Socket;
 public class RaftServerThread implements Runnable {
     RequestHandler requestHandler;
     ReplicationManager replicationManager;
-    int nodeId;
+    String nodeId;
 
-    public RaftServerThread(int nodeId, RequestHandler requestHandler, ReplicationManager replicationManager){
+    public RaftServerThread(String nodeId, RequestHandler requestHandler, ReplicationManager replicationManager){
         this.requestHandler = requestHandler;
         this.replicationManager = replicationManager;
         this.nodeId = nodeId;
@@ -15,7 +15,7 @@ public class RaftServerThread implements Runnable {
 
     public void run(){
         try{
-            ServerSocket server = new ServerSocket(nodeId);
+            ServerSocket server = new ServerSocket(8081);
             
             while (true){
                 Socket socket = server.accept();

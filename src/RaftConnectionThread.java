@@ -1,3 +1,4 @@
+import java.io.EOFException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
@@ -62,6 +63,8 @@ public class RaftConnectionThread implements Runnable {
             }
             socket.close();
 
+        } catch (EOFException e){
+            // do nothing
         } catch (Exception exception){
             exception.printStackTrace();
         }
