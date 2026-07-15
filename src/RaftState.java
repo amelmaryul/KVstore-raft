@@ -8,8 +8,8 @@ public class RaftState {
 
    public RaftState(FileStore fileStore){
     this.fileStore = fileStore;
-    //int[] arr = fileStore.initializeRaftState();
-    /*
+    int[] arr = fileStore.initializeRaftState();
+    
     if (arr != null){
         this.currentTerm = arr[0];
         this.votedFor = String.valueOf(arr[1]); // temporary fix. make sure this maps out
@@ -18,7 +18,7 @@ public class RaftState {
         this.currentTerm = 0;
         this.votedFor = null;
     }
-        */
+        
 
 
   }

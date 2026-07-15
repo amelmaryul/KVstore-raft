@@ -7,6 +7,8 @@ services:
     networks:
       raft_net:
         ipv4_address: 172.20.0.11
+    volumes:
+      - ..:/user/kvstore
 
   node2:
     build: .
@@ -16,6 +18,9 @@ services:
     networks:
       raft_net:
         ipv4_address: 172.20.0.12
+    volumes:
+      - ..:/user/kvstore
+
 
   node3:
     build: .
@@ -25,6 +30,8 @@ services:
     networks:
       raft_net:
         ipv4_address: 172.20.0.13
+    volumes:
+      - ..:/user/kvstore
 
   node4:
     build: .
@@ -34,6 +41,8 @@ services:
     networks:
       raft_net:
         ipv4_address: 172.20.0.14
+    volumes:
+      - ..:/user/kvstore
 
   node5:
     build: .
@@ -43,6 +52,8 @@ services:
     networks:
       raft_net:
         ipv4_address: 172.20.0.15
+    volumes:
+      - ..:/user/kvstore
 
 networks:
   raft_net:
@@ -50,3 +61,5 @@ networks:
     ipam:
       config:
         - subnet: 172.20.0.0/16
+
+
