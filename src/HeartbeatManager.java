@@ -1,6 +1,7 @@
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.List;
@@ -78,7 +79,8 @@ class HeartbeatWorker implements Runnable {
 
     public void run(){
         while (raftState.getRole().equals("Leader")){
-            try (Socket socket = new Socket(followerId, 8081)){
+            try (Socket socket = new Socket()){
+                socket.connect(new InetSocketAddress(followerId, 8081), 300);
                 socket.setSoTimeout(2000);
                 ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
                 ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
