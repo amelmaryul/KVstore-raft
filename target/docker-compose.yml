@@ -1,0 +1,75 @@
+services:
+  node1:
+    build: .
+    environment:
+      - NODE_ID=172.20.0.11
+      - NODES=${NODES}
+    networks:
+      raft_net:
+        ipv4_address: 172.20.0.11
+    volumes:
+      - ..:/user/kvstore
+    ports:
+      - 5051:5050
+
+  node2:
+    build: .
+    environment:
+      - NODE_ID=172.20.0.12
+      - NODES=${NODES}
+    networks:
+      raft_net:
+        ipv4_address: 172.20.0.12
+    volumes:
+      - ..:/user/kvstore
+    ports:
+      - 5052:5050
+
+
+  node3:
+    build: .
+    environment:
+      - NODE_ID=172.20.0.13
+      - NODES=${NODES}
+    networks:
+      raft_net:
+        ipv4_address: 172.20.0.13
+    volumes:
+      - ..:/user/kvstore
+    ports:
+      - 5053:5050
+
+  node4:
+    build: .
+    environment:
+      - NODE_ID=172.20.0.14
+      - NODES=${NODES}
+    networks:
+      raft_net:
+        ipv4_address: 172.20.0.14
+    volumes:
+      - ..:/user/kvstore
+    ports:
+      - 5054:5050
+
+  node5:
+    build: .
+    environment:
+      - NODE_ID=172.20.0.15
+      - NODES=${NODES}
+    networks:
+      raft_net:
+        ipv4_address: 172.20.0.15
+    volumes:
+      - ..:/user/kvstore
+    ports:
+      - 5055:5050
+
+networks:
+  raft_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+

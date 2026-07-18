@@ -20,7 +20,7 @@ public class ClientServer {
 
         ServerSocket serverSocket = new ServerSocket(port);
         System.out.printf("Port %d is open \n", port);
-        storageEngine.readFile("../data.txt");
+        //storageEngine.readFile("../data.txt");
 
         while (true){
 
