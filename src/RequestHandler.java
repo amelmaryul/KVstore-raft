@@ -12,23 +12,56 @@ public class RequestHandler {
         this.fileStore = fileStore;
     }
 
-    public RequestVoteResponse handleRequestVote(RequestVoteRequest req){
-        synchronized (raftState.getLock()){
-            if (req.term > raftState.getCurrentTerm()){
-                raftState.setTerm(req.term, req.candidateId);
-                heartbeatTracker.updateHeartbeat();
-                return new RequestVoteResponse(raftState.getCurrentTerm(), true);
-                
-            }
-            else if (req.term == raftState.getCurrentTerm() && raftState.getVotedFor() == null){
-                heartbeatTracker.updateHeartbeat();
-                raftState.setVotedFor(req.candidateId);
-                return new RequestVoteResponse(raftState.getCurrentTerm(), true);
-            }
+    public RequestVoteResponse handlerequestvote_justkeepherefornow(RequestVoteRequest req){
+        synchronized (logManager.lock){
+            synchronized (raftState.getLock()){
 
-            return new RequestVoteResponse(raftState.getCurrentTerm(), false);
+                if (req.term > raftState.getCurrentTerm()){
+                    raftState.setTerm(req.term, null);
+                    heartbeatTracker.updateHeartbeat();
+                    return new RequestVoteResponse(raftState.getCurrentTerm(), true);
+                    
+                }
+                else if (req.term == raftState.getCurrentTerm() && raftState.getVotedFor() == null){
+                    heartbeatTracker.updateHeartbeat();
+                    raftState.setVotedFor(req.candidateId);
+                    return new RequestVoteResponse(raftState.getCurrentTerm(), true);
+                }
+                LogEntry lastEntry = logManager.getLastLog();
+                if (req.lastLogTerm < lastEntry.term || (req.lastLogTerm == lastEntry.term && req.lastLogIndex < lastEntry.index)){
+                    return new RequestVoteResponse(raftState.getCurrentTerm(), false);
+
+                }
+
+                return new RequestVoteResponse(raftState.getCurrentTerm(), false);
+            }
         }
     }
+
+
+    public RequestVoteResponse handleRequestVote(RequestVoteRequest req){
+        synchronized (logManager.lock){
+            synchronized (raftState.getLock()){
+                if (req.term < raftState.getCurrentTerm()){
+                    return new RequestVoteResponse(raftState.getCurrentTerm(), false);
+                }
+                if (req.term > raftState.getCurrentTerm()){
+                    heartbeatTracker.updateHeartbeat();
+                    raftState.setTerm(req.term, null);
+                }
+
+                LogEntry lastEntry = logManager.getLastLog();
+                if ((raftState.getVotedFor() == null || raftState.getVotedFor().equals(req.candidateId)) && !(req.lastLogTerm < lastEntry.term || (req.lastLogTerm == lastEntry.term && req.lastLogIndex < lastEntry.index))){
+                    heartbeatTracker.updateElectionTimeout();
+                    raftState.setVotedFor(req.candidateId);
+                    return new RequestVoteResponse(raftState.getCurrentTerm(), true);
+                }
+
+                return new RequestVoteResponse(raftState.getCurrentTerm(), false);
+            }
+        }
+    }
+    
 
 
 
