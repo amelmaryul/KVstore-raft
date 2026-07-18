@@ -2,6 +2,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.net.InetSocketAddress;
+import java.net.NoRouteToHostException;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketTimeoutException;
@@ -34,7 +35,11 @@ public class RaftMessaging {
             System.out.println(ip + " is an unknown host");
             return null;
 
-        } catch (Exception e){
+        } catch (NoRouteToHostException e){
+            System.out.println("Docker has amnesia and has forgotten the path to this node: " + ip);
+            return null;
+            
+        }catch (Exception e){
             e.printStackTrace(); 
             return null;
         }
@@ -65,6 +70,7 @@ public class RaftMessaging {
 
 
         } catch (Exception e){
+            e.printStackTrace();
             return null;
         }
     }

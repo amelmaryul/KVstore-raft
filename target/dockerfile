@@ -4,4 +4,4 @@ WORKDIR /user/kvstore/target
 
 COPY . .
 
-CMD ["java", "Main", "8082"]
+CMD ["java", "Main", "5050"]

@@ -30,6 +30,8 @@ public class RaftConnectionThread implements Runnable {
 
                 out_socket.writeObject(response);
                 out_socket.flush();
+                socket.close();
+                return;
 
             }
 
@@ -61,7 +63,33 @@ public class RaftConnectionThread implements Runnable {
                 }
 
             }
-            socket.close();
+
+            while (true){
+                AppendEntriesRequest req = (AppendEntriesRequest) in_socket.readObject();
+                AppendEntriesResponse response = (AppendEntriesResponse) requestHandler.handleAppendEntries(req);
+                boolean replicated = false;
+
+                if (response.success){
+                    replicationManager.replicate(req.entries);
+                    replicated = true;
+                }
+                out_socket.writeObject(response);
+                
+                
+
+                while (!replicated){
+                msg = (AppendEntriesRequest) in_socket.readObject();
+                req = (AppendEntriesRequest) msg;
+                response = (AppendEntriesResponse) requestHandler.handleAppendEntries(req);
+                
+                if (response.success){
+                    replicationManager.replicate(req.entries);
+                    replicated = true;
+                }
+                out_socket.writeObject(response);
+                    
+                }
+            }
 
         } catch (EOFException e){
             // do nothing

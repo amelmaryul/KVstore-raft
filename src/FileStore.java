@@ -39,16 +39,16 @@ public class FileStore {
     }
 
 
-    public int[] initializeRaftState(){
+    public String[] initializeRaftState(){
         synchronized (stateLock){
             try {
                 BufferedReader reader = new BufferedReader(new FileReader(stateFile));
                 String line = reader.readLine();
-                int term = Integer.valueOf(line.split(",")[1]);
+                String term = line.split(",")[1];
                 line = reader.readLine();
-                int votedFor = Integer.valueOf(line.split(",")[1]);
+                String votedFor = (line.split(",")[1]);
                 reader.close();
-                return new int[] {term, votedFor};
+                return new String[] {term, votedFor};
 
             } catch (Exception e) {
                 return null;
@@ -146,15 +146,16 @@ public class FileStore {
         }
        }
 
-    public void trunacate(int index){
+    public boolean trunacate(int index){
         synchronized (logLock){
             try {
                 delBytes(index);
                 raf.setLength(byteLine.getLast());
                 pw.close();
                 pw = new PrintWriter(new FileWriter(logFile, true));
+                return true;
             } catch (Exception e) {
-                return;
+                return false;
             }
  
         }

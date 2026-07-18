@@ -19,6 +19,7 @@ public class RaftServerThread implements Runnable {
             
             while (true){
                 Socket socket = server.accept();
+                socket.setSoTimeout(5000);
                 Thread thread = new Thread(new RaftConnectionThread(socket, requestHandler, replicationManager));
                 thread.start();
             }

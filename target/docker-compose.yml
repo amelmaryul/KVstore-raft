@@ -9,6 +9,8 @@ services:
         ipv4_address: 172.20.0.11
     volumes:
       - ..:/user/kvstore
+    ports:
+      - 5051:5050
 
   node2:
     build: .
@@ -20,6 +22,8 @@ services:
         ipv4_address: 172.20.0.12
     volumes:
       - ..:/user/kvstore
+    ports:
+      - 5052:5050
 
 
   node3:
@@ -32,6 +36,8 @@ services:
         ipv4_address: 172.20.0.13
     volumes:
       - ..:/user/kvstore
+    ports:
+      - 5053:5050
 
   node4:
     build: .
@@ -43,6 +49,8 @@ services:
         ipv4_address: 172.20.0.14
     volumes:
       - ..:/user/kvstore
+    ports:
+      - 5054:5050
 
   node5:
     build: .
@@ -54,6 +62,8 @@ services:
         ipv4_address: 172.20.0.15
     volumes:
       - ..:/user/kvstore
+    ports:
+      - 5055:5050
 
 networks:
   raft_net:

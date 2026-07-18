@@ -28,6 +28,7 @@ public class RaftNode {
     RequestHandler requestHandler;
     ReplicationManager replicationManager;
     FileStore fileStore;
+    HeartbeatManager heartbeatManager;
 
     public RaftNode(String nodeId){
         this.nodeId = nodeId;
@@ -44,8 +45,9 @@ public class RaftNode {
 
         electionManager = new ElectionManager(raftState, nodeId, nodes, logManager, raftMessaging);
         leaderReplicationManager = new LeaderReplicationManager(raftMessaging, replicationState, logManager, raftState, nodeId);
-        requestHandler = new RequestHandler(raftState, logManager, heartbeatTracker);
+        requestHandler = new RequestHandler(raftState, logManager, heartbeatTracker, fileStore);
         replicationManager = new ReplicationManager(logManager);
+        heartbeatManager = new HeartbeatManager(raftState, logManager, raftMessaging, replicationState, nodeId, nodes);
 
 
         System.out.println("Term: " + String.valueOf(raftState.getCurrentTerm()));
@@ -59,20 +61,9 @@ public class RaftNode {
 
         new Thread(() -> {
             try{
-
                 while (true){
                     String[] command = storageEngine.queue.take();
                     logManager.append(new LogEntry(command, raftState.getCurrentTerm(), logManager.size()));
-                    if (raftState.getRole().equals("Leader")){
-                        System.out.println("[LeaderReplication] Propagating the Command!");
-                        for (String node : nodes){
-                            if (node.equals(nodeId)) continue;
-                        new Thread(() -> {
-                                leaderReplicationManager.sendLogs(node, logManager.getFrom(replicationState.getNextIndex(node)));
-                        }).start();
-                        }
-
-                    }
                 }
             } catch (Exception e){
                 e.printStackTrace();
@@ -84,20 +75,23 @@ public class RaftNode {
             while (true) {
                 while (logManager.getLastApplied() < logManager.getCommitIndex()) {
                     System.out.println("[Local Replication Manager] trying to update the RSM!");
-                    LogEntry entry = logManager.get(logManager.getLastApplied() + 1);
-                    String[] command = entry.command;
+                    LogEntry entry = logManager.get(logManager.getLastApplied() + 1); 
+                    if (entry != null){
+                        String[] command = entry.command;
 
-                    if (command[0].equals("set")) {
-                        storageEngine.set(command[1], command[2]);
-                        System.out.println("[Local Replicaotn Manager] Updated RSM");
-                    } else if (command[0].equals("delete")) {
-                        storageEngine.delete(command[1]);
+                        if (command[0].equals("set")) {
+                            storageEngine.set(command[1], command[2]);
+                            System.out.println("[Local Replicaotn Manager] Updated RSM");
+                        } else if (command[0].equals("delete")) {
+                            storageEngine.delete(command[1]);
+                        }
+
+                        logManager.setLastApplied(logManager.getLastApplied() + 1); 
                     }
-
-                    logManager.setLastApplied(logManager.getLastApplied() + 1);
+                    else System.out.println("[Local Replication Manager] Can't update current logs is behind commit index!");
                 }
                 try {
-                    Thread.sleep(50);
+                    Thread.sleep(300);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -140,24 +134,8 @@ public class RaftNode {
 
             else if (role.equals("Leader")) 
             { // sending heartbeats.
-                for (String node : nodes){
-                    if (node.equals(nodeId)) continue;
-
-                    new Thread(() -> {
-                        LogEntry lg = logManager.getLastLog();
-                        AppendEntriesRequest req = new AppendEntriesRequest(raftState.getCurrentTerm(), nodeId, lg.index, lg.term, null, logManager.getCommitIndex());
-                        AppendEntriesResponse response = (AppendEntriesResponse) raftMessaging.sendRequest(node, req);
-
-                    }).start();
-                }
+                heartbeatManager.start();
                 updateCommit();
-                
-                 try {
-                        Thread.sleep(1000);
-                    } catch (Exception e){
-                        e.printStackTrace();
-                }
-
             }
         }
     }

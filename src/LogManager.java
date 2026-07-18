@@ -70,6 +70,7 @@ public class LogManager{
 
     public void truncate(int index){
         synchronized (lock){
+            fileStore.trunacate(index);
             while (log.size() > index){
                 log.removeLast();
             }
