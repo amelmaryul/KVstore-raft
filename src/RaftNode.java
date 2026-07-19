@@ -59,6 +59,22 @@ public class RaftNode {
         Thread thread = new Thread(new RaftServerThread(nodeId, requestHandler, replicationManager));
         thread.start();
 
+        // repopulate the rsm
+        for (int i = 1; i <= logManager.size() - 1; i++) {
+            LogEntry entry = logManager.get(i);
+            if (entry == null) continue;
+            String[] command = entry.command;
+
+            if (command[0].equals("set")) {
+                storageEngine.set(command[1], command[2]);
+            }
+            else if (command[0].equals("delete")) {
+                storageEngine.delete(command[1]);
+            }
+        }
+        logManager.setLastApplied(logManager.size() - 1);
+        logManager.setCommitIndex(logManager.size() - 1);
+
 
 
         new Thread(() -> {
