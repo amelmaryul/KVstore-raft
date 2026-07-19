@@ -4,6 +4,7 @@ services:
     environment:
       - NODE_ID=172.20.0.11
       - NODES=${NODES}
+      - GATEWAY_ID=172.20.0.10
     networks:
       raft_net:
         ipv4_address: 172.20.0.11
@@ -17,6 +18,7 @@ services:
     environment:
       - NODE_ID=172.20.0.12
       - NODES=${NODES}
+      - GATEWAY_ID=172.20.0.10
     networks:
       raft_net:
         ipv4_address: 172.20.0.12
@@ -31,6 +33,7 @@ services:
     environment:
       - NODE_ID=172.20.0.13
       - NODES=${NODES}
+      - GATEWAY_ID=172.20.0.10
     networks:
       raft_net:
         ipv4_address: 172.20.0.13
@@ -44,6 +47,7 @@ services:
     environment:
       - NODE_ID=172.20.0.14
       - NODES=${NODES}
+      - GATEWAY_ID=172.20.0.10
     networks:
       raft_net:
         ipv4_address: 172.20.0.14
@@ -57,6 +61,7 @@ services:
     environment:
       - NODE_ID=172.20.0.15
       - NODES=${NODES}
+      - GATEWAY_ID=172.20.0.10
     networks:
       raft_net:
         ipv4_address: 172.20.0.15
@@ -64,6 +69,17 @@ services:
       - ..:/user/kvstore
     ports:
       - 5055:5050
+
+  gateway:
+    build: .
+    command: ["java", "Gateway"]
+    environment:
+      - GATEWAY_ID=172.20.0.10
+    networks:
+      raft_net:
+        ipv4_address: 172.20.0.10
+    ports:
+      - 5050:5051
 
 networks:
   raft_net:

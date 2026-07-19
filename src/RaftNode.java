@@ -1,6 +1,8 @@
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.net.ConnectException;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -122,6 +124,18 @@ public class RaftNode {
                 if (isLeader){
                     raftState.setRole("Leader");
                     System.out.println("[Leader] I am the Leader. Term: " + String.valueOf(raftState.getCurrentTerm()));
+                    
+                    // tell gateway im leader
+                   try {
+                        System.out.println("Trying to connect to socket at addy: " + System.getenv("GATEWAY_ID"));
+                        Socket s = new Socket(System.getenv("GATEWAY_ID"), 5050);
+                        PrintWriter pw = new PrintWriter(new OutputStreamWriter(s.getOutputStream()), true);
+                        pw.println(this.nodeId);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+
+
                     replicationState.reInitializeState();
                 }
                 else {
