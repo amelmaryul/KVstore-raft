@@ -1,6 +1,8 @@
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.net.ConnectException;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -56,6 +58,22 @@ public class RaftNode {
     public void start(){
         Thread thread = new Thread(new RaftServerThread(nodeId, requestHandler, replicationManager));
         thread.start();
+
+        // repopulate the rsm
+        for (int i = 1; i <= logManager.size() - 1; i++) {
+            LogEntry entry = logManager.get(i);
+            if (entry == null) continue;
+            String[] command = entry.command;
+
+            if (command[0].equals("set")) {
+                storageEngine.set(command[1], command[2]);
+            }
+            else if (command[0].equals("delete")) {
+                storageEngine.delete(command[1]);
+            }
+        }
+        logManager.setLastApplied(logManager.size() - 1);
+        logManager.setCommitIndex(logManager.size() - 1);
 
 
 
@@ -122,6 +140,18 @@ public class RaftNode {
                 if (isLeader){
                     raftState.setRole("Leader");
                     System.out.println("[Leader] I am the Leader. Term: " + String.valueOf(raftState.getCurrentTerm()));
+                    
+                    // tell gateway im leader
+                   try {
+                        System.out.println("Trying to connect to socket at addy: " + System.getenv("GATEWAY_ID"));
+                        Socket s = new Socket(System.getenv("GATEWAY_ID"), 5050);
+                        PrintWriter pw = new PrintWriter(new OutputStreamWriter(s.getOutputStream()), true);
+                        pw.println(this.nodeId);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+
+
                     replicationState.reInitializeState();
                 }
                 else {

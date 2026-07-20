@@ -38,7 +38,7 @@ public class Client {
 
         // Close the socket connection after communication
         socket.close();
-        System.out.println("Port 2020 closed successfully.");
+        System.out.println("Connection Closed");
         scanner.close();
 
     }
