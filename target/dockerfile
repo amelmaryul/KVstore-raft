@@ -1,7 +1,0 @@
-FROM openjdk:28-ea-slim
-
-WORKDIR /user/kvstore/target
-
-COPY . .
-
-CMD ["java", "Main", "5050"]

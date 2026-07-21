@@ -9,7 +9,7 @@ services:
       raft_net:
         ipv4_address: 172.20.0.11
     volumes:
-      - ..:/user/kvstore
+      - ./data:/kvstore/data
     ports:
       - 5051:5050
 
@@ -23,7 +23,7 @@ services:
       raft_net:
         ipv4_address: 172.20.0.12
     volumes:
-      - ..:/user/kvstore
+      - ./data:/kvstore/data
     ports:
       - 5052:5050
 
@@ -38,7 +38,7 @@ services:
       raft_net:
         ipv4_address: 172.20.0.13
     volumes:
-      - ..:/user/kvstore
+      - ./data:/kvstore/data
     ports:
       - 5053:5050
 
@@ -52,7 +52,7 @@ services:
       raft_net:
         ipv4_address: 172.20.0.14
     volumes:
-      - ..:/user/kvstore
+      - ./data:/kvstore/data
     ports:
       - 5054:5050
 
@@ -66,13 +66,13 @@ services:
       raft_net:
         ipv4_address: 172.20.0.15
     volumes:
-      - ..:/user/kvstore
+      - ./data:/kvstore/data
     ports:
       - 5055:5050
 
   gateway:
     build: .
-    command: ["java", "gateway.Gateway"]
+    command: ["java", "-cp", ".", "gateway.Gateway"]
     environment:
       - GATEWAY_ID=172.20.0.10
     networks:

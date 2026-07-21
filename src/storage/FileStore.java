@@ -29,8 +29,8 @@ public class FileStore {
 
     public FileStore(String nodeId){
         this.nodeId = nodeId;
-        logFile = "../" + String.valueOf(nodeId) + "-logs.txt";
-        stateFile = "../" + String.valueOf(nodeId) + "-state.txt";
+        logFile = "../data/" + String.valueOf(nodeId) + "-logs.txt";
+        stateFile = "../data/" + String.valueOf(nodeId) + "-state.txt";
         byteLine.add(0L);
         try{
             pw = new PrintWriter(new FileWriter(logFile, true));

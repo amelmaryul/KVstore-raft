@@ -10,7 +10,7 @@ case $1 in
     ;;
 
     start)
-    docker compose -f target/docker-compose.yml up --build
+    docker compose up --build
     ;;
 
     client)

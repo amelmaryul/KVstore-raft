@@ -5,6 +5,7 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.ConnectException;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -148,9 +149,12 @@ public class RaftNode {
                     // tell gateway im leader
                    try {
                         System.out.println("Trying to connect to socket at addy: " + System.getenv("GATEWAY_ID"));
-                        Socket s = new Socket(System.getenv("GATEWAY_ID"), 5050);
+                        //Socket s = new Socket(System.getenv("GATEWAY_ID"), 5050);
+                        Socket s = new Socket();
+                        s.connect(new InetSocketAddress(System.getenv("GATEWAY_ID"), 5050), 350);
                         PrintWriter pw = new PrintWriter(new OutputStreamWriter(s.getOutputStream()), true);
                         pw.println(this.nodeId);
+                        s.close();
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
