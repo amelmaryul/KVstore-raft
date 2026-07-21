@@ -5,7 +5,7 @@
 case $1 in
     build)
     echo "building.."
-    javac -d target src/*.java
+    javac -d target $(find src -name "*.java")
     echo "build successful"
     ;;
 
@@ -14,7 +14,7 @@ case $1 in
     ;;
 
     client)
-    java -cp target Client 5050
+    java -cp target client.Client 5050
     ;;
 
     *)

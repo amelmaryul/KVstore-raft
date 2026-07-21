@@ -72,7 +72,7 @@ services:
 
   gateway:
     build: .
-    command: ["java", "Gateway"]
+    command: ["java", "gateway.Gateway"]
     environment:
       - GATEWAY_ID=172.20.0.10
     networks:
