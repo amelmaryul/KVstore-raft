@@ -59,7 +59,9 @@ public class ClientThread implements Runnable {
                 }
                 // this is to delete but it does nothing yet
                 else if (command[0].equals("delete")){
-                    out_socket.println("Deleted Value: " + storageEngine.delete(command[1]));
+                    out_socket.println("We'll try to update the map in a bit!");
+                    storageEngine.queue.offer(command);
+                    System.out.println("[ClientThread] added delete command to the queue.");
                 }
                 else{
                     out_socket.println("You sent a message with an incorrect format. Try again. ////////////// Message: " + Arrays.toString(command));
