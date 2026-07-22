@@ -8,47 +8,12 @@ import java.util.Arrays;
 import java.util.Scanner;
 
 
-/*
-This class is very nasty and its hard for me to justify why it even exists. 
-The idea is to use resp strings for handling requests, even though i genuinly dont know why i should use it
-Redis uses it, so its for sure the best option i just dont understand why and therefore its hard for me to feel motivated enough to do it
-
-Right now the methods feel very hacky. Intuitively, i think the idea is, read the string as bytes
-Right now i just split strings and essentially bypass the whole resp format. 
-
-Essentially there are 2 parts, 
-Part 1 - Generating RESP String
-Takes a command string like 'set salem good person' and then genertes a RESP string like *3\r\n$3\r\nGET\r\n and so on. 
-This parts feels alright. I think the onus of building the string might be on the client side so its fine to build like this. 
-
-Part 2 - Converting String to command
-This parts feels the most tacky and the one that needs to be modified the most. 
-I believe some form of byte reading is needed to generate the array. I think bcs the onus is on the server side for this part, the idea is to be fast and efficient.
-As of now theres no byte reading and just a bunch of string.spliting and some tacky logic.
-
-Do better
-
-
-Update:
-ParseRespString method has been developed to readlines. this is a slight better update. 
-its not ideal but i think its a good base that can be used to build on later.
-
-
-*/
 
 public class Parsing {
 
 
 
 
-    //////////////////////////////////////// client side //////////////////////////////////////////////////////////////////////////               //////////////////////////////////
-
-    /*
-    Central manager of client side communication.
-    Checks if string are valid
-    valid strings turn into an array
-    aforementioned array turns into a respString
-    */
     public static String parseCommandString(String message){
         boolean valid = isValidCommand(message);
         if (valid){
@@ -61,15 +26,6 @@ public class Parsing {
 
 
 
-    /*
-    Takes a command like 'set salem is a good person' and converts it to an array like 
-    [set, salem, is a good person]
-    Also uses isValidCommand to check if string is valid
-    If String is not valid it throws a RuntimeException which can be handled wherever
-    */
-   /*
-   update while reading this. i believe this never expects the string to be get? get malek return an array of [get, malek, malek]
-   */
     private static String[] buildArray(String message){
 
         // resp string should either start as set get or delete so i only have to consider these 3
@@ -151,7 +107,7 @@ public class Parsing {
     */
     public static String[] parseRequest(BufferedReader reader){
         
-        String respString = getRespString(reader); // blocking I/O so this should wait until it gets all packages from the respstring or throw an error
+        String respString = getRespString(reader); 
 
         boolean valid = checkValidRespString(respString);
         if (valid){

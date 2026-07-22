@@ -2,9 +2,6 @@ package storage;
 
 import java.io.*;
 import java.util.concurrent.ConcurrentHashMap;
-/*
-An idea for this file is i think i should have a default constructor that just returns the one instance of storageEngine
-*/
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class StorageEngine {
