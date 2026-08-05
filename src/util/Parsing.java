@@ -1,9 +1,12 @@
 package util;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.StringReader;
 import java.lang.reflect.Array;
+import java.net.Socket;
 import java.util.Arrays;
 import java.util.Scanner;
 
@@ -38,6 +41,94 @@ its not ideal but i think its a good base that can be used to build on later.
 
 public class Parsing {
 
+
+    public String getRespType(BufferedInputStream in) throws Exception {
+        State buffer = new State(1024);
+        StringBuilder sb = new StringBuilder();
+        int bytesRead = 0;
+
+        boolean foundNurse = false;
+
+
+        while (!foundNurse){
+            bytesRead = in.read(buffer.buffer, buffer.offset, buffer.size - buffer.offset);
+            System.out.printf("Bytes Read: %d\n", bytesRead);
+            if (bytesRead == -1) throw new Exception("Error reading from input stream");
+            String temp = new String(buffer.buffer, buffer.offset, bytesRead);
+            sb.append(temp);
+            System.out.printf("Curr Parsed: %s\n", sb.toString());
+            buffer.offset += bytesRead;
+            if (sb.toString().contains("\r\n")) foundNurse = true;
+        }
+
+        String s = sb.toString();
+        int idx = s.indexOf("\r\n");
+        String respType = s.substring(0, idx);
+        
+        return respType;
+
+    }
+
+    public boolean isRespTypeValid(String respType){
+
+
+        return true;
+    }
+
+
+    // i just want to return a command array ok. 
+    public String readBulkString(BufferedInputStream in, State buf) throws Exception{
+        int bufferSize = 1024;
+        int bytesRead = 0;
+
+        StringBuilder sb = new StringBuilder();
+
+        while (true) {
+            bytesRead = in.read(buf.buffer, buf.offset, buf.size);
+            if (bytesRead == -1){
+                break;
+            }
+            sb.append(new String(buf.buffer, buf.offset, buf.size - buf.offset));
+            buf.offset += bytesRead;
+            if (sb.toString().contains("\r\n")); break;
+
+        }
+
+        int idx = sb.toString().indexOf("\r\n");
+        String s = sb.toString().substring(0, idx);
+        return s;
+
+        //return handleBuildString(in, buf, sb);
+    }
+
+    public void typeOfString(String s){
+        if (s.charAt(0) == '$'){ // bulk string
+            // ohhh set state as bulk strign me thinks
+        }
+    }
+
+    public String handleBuildString(BufferedInputStream in, State buffer, StringBuilder sb) throws Exception {
+        String s = sb.toString();
+        int idx = s.indexOf("\r\n");
+        if (idx == -1) throw new Error("No registered nurse"); // error here maybe throw something idk
+        int respLen = Integer.valueOf(s.substring(1, idx));
+        int currLen = s.substring(idx).length();
+        int bytesRread = 0;
+
+        while (currLen < respLen){ // or until it hits a registered nurse
+            bytesRread = in.read(buffer.buffer, buffer.offset, buffer.size);
+            if (bytesRread == -1) {
+                throw new Error("Some error while reading bytes");
+            }
+            sb.append(new String(buffer.buffer, buffer.offset, buffer.size - buffer.offset));
+            buffer.offset += bytesRread;
+
+        }
+
+        String res = sb.substring(1 + respLen + 2); // this should include the new line i think? not sure
+        in.close();
+        return res;
+    }
 
 
 
