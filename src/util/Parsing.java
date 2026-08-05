@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.StringReader;
 import java.lang.reflect.Array;
 import java.net.Socket;
+import java.nio.Buffer;
 import java.util.Arrays;
 import java.util.Scanner;
 
@@ -70,10 +71,70 @@ public class Parsing {
     }
 
     public boolean isRespTypeValid(String respType){
+        char c = respType.charAt(0);
 
+        return (c == ':' || c == '+' || c == '-' || c == '*' || c == '$');
+
+    }
+
+    public String parseBulkString(BufferedInputStream in, State buffer) throws Exception {
+        boolean foundNurse = false;
+        int n = 0;
+        StringBuilder sb = new StringBuilder();
+
+        while (!foundNurse){
+            n = in.read(buffer.buffer, buffer.offset, buffer.size - buffer.offset);
+            if (n == -1) throw new Exception("Error reading from input stream");
+            String temp = new String(buffer.buffer, buffer.offset, n);
+            sb.append(temp);
+            buffer.offset += n;
+            if (sb.toString().contains("\r\n")) foundNurse = true;
+        }
+        if (!isValidBulkString(buffer)) throw new Exception("Invalid Bulk String");
+
+        String bulkString = sb.toString().split("\r\n")[1];
+        return bulkString;
+
+
+    }
+
+    public boolean isValidBulkString(State buffer){
+        String s = new String(buffer.buffer, 0, buffer.offset);
+        System.out.println(s);
+
+        int idx = s.indexOf("\r\n");
+        System.out.printf("[ValidBulkString] registered nurse found at index: %d\n", idx);
+        if (idx == -1) return false;
+        int size = Integer.valueOf(s.substring(1, idx));
+
+        String bulkString = s.split("\r\n")[1];
+        System.out.printf("Expected size: %d || Real size: %d\n", size, bulkString.length());
+        if (size != bulkString.length()) {
+            return false;
+        }
 
         return true;
     }
+
+
+    public void pr(BufferedInputStream in, State buffer, String respType) throws Exception {
+        if (!isRespTypeValid(respType)) throw new Exception("Invalid RespType");
+        char c = respType.charAt(0);
+        switch (c){
+            case '$':
+                // call parse bulkString
+            case ':':
+                // call parse integers
+            case '+':
+                // call parse simple message
+            case '*':
+                // call parse arrays
+        }
+
+    }
+
+
+    
 
 
     // i just want to return a command array ok. 
