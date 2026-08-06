@@ -43,7 +43,12 @@ its not ideal but i think its a good base that can be used to build on later.
 public class Parsing {
 
 
-    public String getRespType(BufferedInputStream in) throws Exception {
+    public String parseRespValue(BufferedInputStream in) throws Exception {
+        State buffer = getRespType(in);
+        return handleRespTypeCase(in, buffer, buffer.respType);
+    }
+
+    public State getRespType(BufferedInputStream in) throws Exception {
         State buffer = new State(1024);
         StringBuilder sb = new StringBuilder();
         int bytesRead = 0;
@@ -65,13 +70,14 @@ public class Parsing {
         String respType = s.substring(0, idx);
 
 
-        int idx2 = s.indexOf("\r\n");
-        buffer.messageLen = Integer.valueOf(s.substring(1, idx2));
+        if (s.charAt(0) != '+' && s.charAt(0) != '-') {
+            buffer.messageLen = Integer.valueOf(s.substring(1, idx));
+        }
         buffer.setRespType(respType);
         
-        return respType;
-
+        return buffer;
     }
+
 
     public boolean isRespTypeValid(String respType){
         char c = respType.charAt(0);
@@ -110,7 +116,6 @@ public class Parsing {
 
     }
 
-    // terrible error handling from as per
     public boolean isValidBulkString(State buffer){
         String s = new String(buffer.buffer, 0, buffer.offset);
 
@@ -133,24 +138,42 @@ public class Parsing {
     }
 
 
-    public void pr(BufferedInputStream in, State buffer, String respType) throws Exception {
+    public String handleRespTypeCase(BufferedInputStream in, State buffer, String respType) throws Exception {
         if (!isRespTypeValid(respType)) throw new Exception("Invalid RespType");
         char c = respType.charAt(0);
         switch (c){
             case '$':
-                // call parse bulkString
+                return parseBulkString(in, buffer);
             case ':':
+                return String.valueOf(parseRespInteger(in, buffer));
                 // call parse integers
             case '+':
-                // call parse simple message
+                return buffer.respType;
+                // parse simple message
             case '*':
                 // call parse arrays
+            case '-':
+                // idk
+                return buffer.respType;
+            
+            default:
+                return "";
 
         }
 
     }
 
 
+    public long parseRespInteger(BufferedInputStream in, State buffer) throws Exception {
+        char sign = buffer.respType.charAt(1);
+        System.out.printf("///////////////////////////////////////////////// Sign: %c\n", sign);
+
+        if (sign == '+') return Long.valueOf(buffer.respType.substring(1));
+
+        if (sign == '-') return Long.valueOf(buffer.respType.substring(1));
+
+        throw new Exception("Invalid Resp integer");
+    }
     
 
 
