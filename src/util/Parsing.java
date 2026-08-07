@@ -79,7 +79,7 @@ public class Parsing {
         buffer.buffer = trimBuffer(buffer, true);
         
 
-        for (int i = 0; i < buffer.messageLen; i++){ // yeah its kille
+        for (int i = 0; i < messageLen; i++){ // yeah its kille
             res[i] = parseRespValue(in, buffer);
             // trim off
             buffer.buffer = trimBuffer(buffer, false);
@@ -98,6 +98,7 @@ public class Parsing {
 
     public void getRespType(BufferedInputStream in, RespBuffer buffer) throws Exception {
         StringBuilder sb = new StringBuilder();
+        sb.append(new String(buffer.buffer, 0, buffer.offset));
         int bytesRead = 0;
 
         boolean foundNurse = false;
@@ -105,12 +106,21 @@ public class Parsing {
 
         while (!foundNurse){
             bytesRead = in.read(buffer.buffer, buffer.offset, buffer.size - buffer.offset);
-            if (bytesRead == -1) throw new Exception("Error reading from input stream");
-            String temp = new String(buffer.buffer, buffer.offset, bytesRead);
-            sb.append(temp);
-            buffer.offset += bytesRead;
-            if (sb.toString().contains("\r\n")) foundNurse = true;
-        }
+            if (bytesRead == -1) {
+                if (sb.toString().contains("\r\n")) {
+                    foundNurse = true;
+                }
+                else throw new Exception("Empty input stream before valid resp string");
+
+            }
+            else {
+                String temp = new String(buffer.buffer, buffer.offset, bytesRead);
+                sb.append(temp);
+                buffer.offset += bytesRead;
+                if (sb.toString().contains("\r\n")) foundNurse = true;
+
+            }
+            }
 
         String s = sb.toString();
         int idx = s.indexOf("\r\n");
@@ -137,10 +147,8 @@ public class Parsing {
         int n = 0;
         StringBuilder sb = new StringBuilder();
         int expectedSize = buffer.messageLen + 2; // what if the buffer alr has values inside!!! 
-        System.out.printf("Expected Size: %d || buffer offset: %d || respType length: %d\n", expectedSize, buffer.offset, buffer.respType.length());
-        int diff = buffer.offset - (buffer.respType.length() + 2);
+        int diff = buffer.offset - (buffer.respType.length() + 2); // wtf was i trying to do here!
         expectedSize -= diff;
-        System.out.printf("Expected Size After: %d\n", expectedSize);
 
 
         while (expectedSize > 0) {
@@ -152,8 +160,6 @@ public class Parsing {
             buffer.offset += n;
         }
         if (!isValidBulkString(buffer)) throw new Exception("Invalid Bulk String");
-
-        System.out.printf("String before split: %s", sb.toString());
 
 
         String bulkString = new String(buffer.buffer).substring(buffer.respType.length() +2, buffer.respType.length() + 2 + buffer.messageLen);
@@ -167,17 +173,22 @@ public class Parsing {
         String s = new String(buffer.buffer, 0, buffer.offset);
 
         int idx = s.indexOf("\r\n");
-        if (idx == -1) return false;
+        if (idx == -1){
+            System.out.println("No registered nurse"); 
+            return false;
+        }
         int size = Integer.valueOf(s.substring(1, idx));
+        s = s.substring(idx, size + 2 + idx);
 
         String[] splits = s.split("\r\n");
+        // this is wrong and stupid and silly you are byte readign so you need to read bytes and not weird ahh sloppy ahh this shit
         String bulkString = splits[1];
         for (int i = 2; i < splits.length; i++){
             bulkString += "\r\n" + splits[i];
         }
 
-        System.out.printf("Expected size: %d || Real size: %d\n", size, bulkString.length());
         if (size != bulkString.length()) {
+            System.out.println("Size mismatch");
             return false;
         }
 
