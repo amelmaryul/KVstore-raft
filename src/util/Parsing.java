@@ -43,11 +43,12 @@ its not ideal but i think its a good base that can be used to build on later.
 public class Parsing {
 
     // currently impure bcs it edits RespBuffer resp. 
-    public byte[] trimBuffer(RespBuffer buffer, boolean isArray){
+    // not only is this stupidi fuckign idiot impure it also cant parse simple strings you silly silly silly baka ! 
+    public byte[] trimBuffer(RespBuffer buffer, boolean isArrayOrSimpleString){
         int len = buffer.buffer.length;
         byte[] newBuffer = new byte[len];
 
-        if (isArray){
+        if (isArrayOrSimpleString){
             String s = new String(buffer.buffer);
             int idx = s.indexOf("\r\n");
             s = s.substring(idx+2);
@@ -81,8 +82,11 @@ public class Parsing {
 
         for (int i = 0; i < messageLen; i++){ // yeah its kille
             res[i] = parseRespValue(in, buffer);
+            System.out.printf("%d element added is: %s\n",i+1, res[i]);
             // trim off
-            buffer.buffer = trimBuffer(buffer, false);
+            char c = buffer.respType.charAt(0);
+            if (c == '+' || c == '-') buffer.buffer = trimBuffer(buffer, true);
+            else buffer.buffer = trimBuffer(buffer, false);
 
         }
 
@@ -103,6 +107,7 @@ public class Parsing {
 
         boolean foundNurse = false;
 
+        System.out.printf("State of bytes inside buffer rn: %s\n", sb.toString());
 
         while (!foundNurse){
             bytesRead = in.read(buffer.buffer, buffer.offset, buffer.size - buffer.offset);
