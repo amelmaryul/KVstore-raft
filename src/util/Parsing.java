@@ -42,14 +42,61 @@ its not ideal but i think its a good base that can be used to build on later.
 
 public class Parsing {
 
+    // currently impure bcs it edits RespBuffer resp. 
+    public byte[] trimBuffer(RespBuffer buffer, boolean isArray){
+        int len = buffer.buffer.length;
+        byte[] newBuffer = new byte[len];
 
-    public String parseRespValue(BufferedInputStream in) throws Exception {
-        State buffer = getRespType(in);
+        if (isArray){
+            String s = new String(buffer.buffer);
+            int idx = s.indexOf("\r\n");
+            s = s.substring(idx+2);
+            byte[] b = s.getBytes();
+
+            for (int i = 0; i < b.length; i++){
+                newBuffer[i] = b[i];
+            }
+            buffer.offset = b.length; // impurity here
+            return newBuffer;
+        }
+
+        String s = new String(buffer.buffer);
+        s = s.substring(s.indexOf("\r\n")+2);
+        s = s.substring(s.indexOf("\r\n")+2);
+        byte[] b = s.getBytes();
+        for (int i = 0; i < b.length; i++){
+            newBuffer[i] = b[i];
+        }
+        buffer.offset = b.length; // impurity here
+
+
+        return newBuffer;
+    }
+
+    public String[] handleRespArray(BufferedInputStream in, RespBuffer buffer) throws Exception{
+        int messageLen = buffer.messageLen;
+        String[] res = new String[messageLen];
+        buffer.buffer = trimBuffer(buffer, true);
+        
+
+        for (int i = 0; i < buffer.messageLen; i++){ // yeah its kille
+            res[i] = parseRespValue(in, buffer);
+            // trim off
+            buffer.buffer = trimBuffer(buffer, false);
+
+        }
+
+
+        return res;
+    }
+
+
+    public String parseRespValue(BufferedInputStream in, RespBuffer buffer) throws Exception {
+        getRespType(in, buffer);
         return handleRespTypeCase(in, buffer, buffer.respType);
     }
 
-    public State getRespType(BufferedInputStream in) throws Exception {
-        State buffer = new State(1024);
+    public void getRespType(BufferedInputStream in, RespBuffer buffer) throws Exception {
         StringBuilder sb = new StringBuilder();
         int bytesRead = 0;
 
@@ -75,7 +122,7 @@ public class Parsing {
         }
         buffer.setRespType(respType);
         
-        return buffer;
+        return;
     }
 
 
@@ -86,7 +133,7 @@ public class Parsing {
 
     }
 
-    public String parseBulkString(BufferedInputStream in, State buffer) throws Exception {
+    public String parseBulkString(BufferedInputStream in, RespBuffer buffer) throws Exception {
         int n = 0;
         StringBuilder sb = new StringBuilder();
         int expectedSize = buffer.messageLen + 2; // what if the buffer alr has values inside!!! 
@@ -116,7 +163,7 @@ public class Parsing {
 
     }
 
-    public boolean isValidBulkString(State buffer){
+    public boolean isValidBulkString(RespBuffer buffer){
         String s = new String(buffer.buffer, 0, buffer.offset);
 
         int idx = s.indexOf("\r\n");
@@ -138,7 +185,7 @@ public class Parsing {
     }
 
 
-    public String handleRespTypeCase(BufferedInputStream in, State buffer, String respType) throws Exception {
+    public String handleRespTypeCase(BufferedInputStream in, RespBuffer buffer, String respType) throws Exception {
         if (!isRespTypeValid(respType)) throw new Exception("Invalid RespType");
         char c = respType.charAt(0);
         switch (c){
@@ -152,6 +199,7 @@ public class Parsing {
                 // parse simple message
             case '*':
                 // call parse arrays
+                return Arrays.toString(handleRespArray(in, buffer));
             case '-':
                 // idk
                 return buffer.respType;
@@ -164,7 +212,7 @@ public class Parsing {
     }
 
 
-    public long parseRespInteger(BufferedInputStream in, State buffer) throws Exception {
+    public long parseRespInteger(BufferedInputStream in, RespBuffer buffer) throws Exception {
         char sign = buffer.respType.charAt(1);
         System.out.printf("///////////////////////////////////////////////// Sign: %c\n", sign);
 
@@ -178,7 +226,7 @@ public class Parsing {
 
 
     // i just want to return a command array ok. 
-    public String readBulkString(BufferedInputStream in, State buf) throws Exception{
+    public String readBulkString(BufferedInputStream in, RespBuffer buf) throws Exception{
         int bufferSize = 1024;
         int bytesRead = 0;
 
@@ -208,7 +256,7 @@ public class Parsing {
         }
     }
 
-    public String handleBuildString(BufferedInputStream in, State buffer, StringBuilder sb) throws Exception {
+    public String handleBuildString(BufferedInputStream in, RespBuffer buffer, StringBuilder sb) throws Exception {
         String s = sb.toString();
         int idx = s.indexOf("\r\n");
         if (idx == -1) throw new Error("No registered nurse"); // error here maybe throw something idk
