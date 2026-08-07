@@ -40,15 +40,17 @@ its not ideal but i think its a good base that can be used to build on later.
 
 */
 
+// *2\r\n*1\r\n$5\r\nhello\r\n$5\r\nworld\r\n
+ 
 public class Parsing {
 
     // currently impure bcs it edits RespBuffer resp. 
     // not only is this stupidi fuckign idiot impure it also cant parse simple strings you silly silly silly baka ! 
-    public byte[] trimBuffer(RespBuffer buffer, boolean isArrayOrSimpleString){
+    public byte[] trimBuffer(RespBuffer buffer, boolean isBulkString){
         int len = buffer.buffer.length;
         byte[] newBuffer = new byte[len];
 
-        if (isArrayOrSimpleString){
+        if (!isBulkString){
             String s = new String(buffer.buffer);
             int idx = s.indexOf("\r\n");
             s = s.substring(idx+2);
@@ -75,22 +77,27 @@ public class Parsing {
     }
 
     public String[] handleRespArray(BufferedInputStream in, RespBuffer buffer) throws Exception{
+        buffer.stack++;
         int messageLen = buffer.messageLen;
         String[] res = new String[messageLen];
-        buffer.buffer = trimBuffer(buffer, true);
+        buffer.buffer = trimBuffer(buffer, false);
         
 
         for (int i = 0; i < messageLen; i++){ // yeah its kille
             res[i] = parseRespValue(in, buffer);
             System.out.printf("%d element added is: %s\n",i+1, res[i]);
             // trim off
+            // for nested baddies this dont work. 
+            // in the nested world. you end up trimming 2 times in a row
+            if (buffer.stack > 1 && i + 1 == messageLen) continue;
             char c = buffer.respType.charAt(0);
-            if (c == '+' || c == '-') buffer.buffer = trimBuffer(buffer, true);
+            if (c == '$') buffer.buffer = trimBuffer(buffer, true);
             else buffer.buffer = trimBuffer(buffer, false);
 
         }
 
 
+        buffer.stack--;
         return res;
     }
 
@@ -183,16 +190,9 @@ public class Parsing {
             return false;
         }
         int size = Integer.valueOf(s.substring(1, idx));
-        s = s.substring(idx, size + 2 + idx);
+        String ss = s.substring(idx, size + 2 + idx); // i enforce the size to be true here. if it was bigger i wouldnt catch it. 
 
-        String[] splits = s.split("\r\n");
-        // this is wrong and stupid and silly you are byte readign so you need to read bytes and not weird ahh sloppy ahh this shit
-        String bulkString = splits[1];
-        for (int i = 2; i < splits.length; i++){
-            bulkString += "\r\n" + splits[i];
-        }
-
-        if (size != bulkString.length()) {
+        if (!s.substring(size + 2 + idx, size + 4 + idx).equals("\r\n")) {
             System.out.println("Size mismatch");
             return false;
         }
