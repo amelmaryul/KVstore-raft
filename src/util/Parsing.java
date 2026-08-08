@@ -8,6 +8,7 @@ import java.io.StringReader;
 import java.lang.reflect.Array;
 import java.net.Socket;
 import java.nio.Buffer;
+import java.util.*;
 import java.util.Arrays;
 import java.util.Scanner;
 
@@ -43,6 +44,61 @@ its not ideal but i think its a good base that can be used to build on later.
 // *2\r\n*1\r\n$5\r\nhello\r\n$5\r\nworld\r\n
  
 public class Parsing {
+
+    // turn input into a resp string
+    public String bulkStringToResp(String s){
+        int len = s.length();
+        StringBuilder sb = new StringBuilder();
+        sb.append("$");
+        sb.append(String.valueOf(len));
+        sb.append("\r\n");
+        sb.append(s+"\r\n");
+
+        return sb.toString();
+
+    }
+
+
+    public String arrayToRespArray(String[] command){
+        StringBuilder sb = new StringBuilder();
+        sb.append("*"+String.valueOf(command.length)+"\r\n");
+
+        for (int i = 1; i < command.length; i++){
+            sb.append(bulkStringToResp(command[i]));
+        }
+
+        return sb.toString();
+    }
+
+    public String[] inputToArray(String s){
+        List<String> res = new ArrayList<>();
+        StringBuilder sb = new StringBuilder();
+        boolean insideQuotes = false;
+
+
+        // set "hey how are you today" "hey, im doing good wbu?"
+        for (char c : s.toCharArray()){
+            if (c == '"'){
+                insideQuotes = !insideQuotes;
+                continue;
+            }
+            if (c == ' ' && !insideQuotes){
+                res.add(sb.toString());
+                sb.setLength(0);
+                continue;
+            }
+            sb.append(c);
+        }
+        res.add(sb.toString());
+
+
+        return res.toArray(new String[0]);
+    }
+
+
+
+
+    // parsing resp string into a command logic below
 
     // currently impure bcs it edits RespBuffer resp. 
     // not only is this stupidi fuckign idiot impure it also cant parse simple strings you silly silly silly baka ! 

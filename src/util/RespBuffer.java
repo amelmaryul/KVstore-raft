@@ -6,10 +6,12 @@ public class RespBuffer {
     int size;
     int messageLen = 0;
     String respType;
+    int stack; // quick fix for recursive arrays. 
 
     public RespBuffer(int size){
         this.size = size;
         buffer = new byte[this.size];
+        this.stack = 0; 
     }
 
 
