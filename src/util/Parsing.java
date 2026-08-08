@@ -63,7 +63,7 @@ public class Parsing {
         StringBuilder sb = new StringBuilder();
         sb.append("*"+String.valueOf(command.length)+"\r\n");
 
-        for (int i = 1; i < command.length; i++){
+        for (int i = 0; i < command.length; i++){
             sb.append(bulkStringToResp(command[i]));
         }
 
@@ -76,7 +76,6 @@ public class Parsing {
         boolean insideQuotes = false;
 
 
-        // set "hey how are you today" "hey, im doing good wbu?"
         for (char c : s.toCharArray()){
             if (c == '"'){
                 insideQuotes = !insideQuotes;
@@ -91,8 +90,15 @@ public class Parsing {
         }
         res.add(sb.toString());
 
-
         return res.toArray(new String[0]);
+    }
+
+
+    public String generateRespString(String s){
+        String[] command = inputToArray(s);
+        String resp = arrayToRespArray(command);
+
+        return resp;
     }
 
 
