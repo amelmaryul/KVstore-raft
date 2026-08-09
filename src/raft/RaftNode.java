@@ -64,6 +64,8 @@ public class RaftNode {
         Thread thread = new Thread(new RaftServerThread(nodeId, requestHandler, replicationManager));
         thread.start();
 
+
+        /* 
         // repopulate the rsm
         for (int i = 1; i <= logManager.size() - 1; i++) {
             LogEntry entry = logManager.get(i);
@@ -79,7 +81,7 @@ public class RaftNode {
         }
         logManager.setLastApplied(logManager.size() - 1);
         logManager.setCommitIndex(logManager.size() - 1);
-
+        */
 
 
         new Thread(() -> {
@@ -111,7 +113,14 @@ public class RaftNode {
 
                         logManager.setLastApplied(logManager.getLastApplied() + 1); 
                     }
-                    else System.out.println("[Local Replication Manager] Can't update current logs is behind commit index!");
+                    else {
+                        System.out.println("[Local Replication Manager] Can't update current logs is behind commit index!");
+                        try {
+                            Thread.sleep(300);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
                 }
                 try {
                     Thread.sleep(300);
