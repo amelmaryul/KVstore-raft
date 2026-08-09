@@ -19,32 +19,6 @@ public class RequestHandler {
         this.fileStore = fileStore;
     }
 
-    public RequestVoteResponse handlerequestvote_justkeepherefornow(RequestVoteRequest req){
-        synchronized (logManager.lock){
-            synchronized (raftState.getLock()){
-
-                if (req.term > raftState.getCurrentTerm()){
-                    raftState.setTerm(req.term, null);
-                    heartbeatTracker.updateHeartbeat();
-                    return new RequestVoteResponse(raftState.getCurrentTerm(), true);
-                    
-                }
-                else if (req.term == raftState.getCurrentTerm() && raftState.getVotedFor() == null){
-                    heartbeatTracker.updateHeartbeat();
-                    raftState.setVotedFor(req.candidateId);
-                    return new RequestVoteResponse(raftState.getCurrentTerm(), true);
-                }
-                LogEntry lastEntry = logManager.getLastLog();
-                if (req.lastLogTerm < lastEntry.term || (req.lastLogTerm == lastEntry.term && req.lastLogIndex < lastEntry.index)){
-                    return new RequestVoteResponse(raftState.getCurrentTerm(), false);
-
-                }
-
-                return new RequestVoteResponse(raftState.getCurrentTerm(), false);
-            }
-        }
-    }
-
 
     public RequestVoteResponse handleRequestVote(RequestVoteRequest req){
         synchronized (logManager.lock){
@@ -72,27 +46,6 @@ public class RequestHandler {
 
 
 
-    public AppendEntriesResponse handleAppendEntries_justkeepherefornow(AppendEntriesRequest req){
-        heartbeatTracker.updateHeartbeat();
-        synchronized (raftState.getLock()){
-            if (req.term > raftState.getCurrentTerm()){
-                raftState.setTerm(req.term, null);
-            }
-            if (logManager.getCommitIndex() < req.leaderCommit) logManager.setCommitIndex(req.leaderCommit);
-            if (req.entries == null && req.term == raftState.getCurrentTerm()){
-                return new AppendEntriesResponse(raftState.getCurrentTerm(), true);
-            }
-        }
-        synchronized (logManager.lock){
-            LogEntry lg = logManager.get(req.prevLogIndex);
-            if (lg != null && req.leaderCommit > logManager.getCommitIndex()) logManager.setCommitIndex(req.leaderCommit);
-            if (lg != null && req.prevLogIndex == lg.index && req.prevLogTerm == lg.term){
-                return new AppendEntriesResponse(raftState.getCurrentTerm(), true);
-            }
-
-            return new AppendEntriesResponse(raftState.getCurrentTerm(), false);
-        }
-    }
 
 
     public AppendEntriesResponse handleAppendEntries(AppendEntriesRequest req){

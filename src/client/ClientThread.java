@@ -60,15 +60,9 @@ public class ClientThread implements Runnable {
                     out.flush();
                 }
                 else if (command[0].equals("delete")){
-                    msg = parsing.bulkStringToResp("Deleted Value: " + storageEngine.delete(command[1]));
-                    out.write(msg.getBytes()); 
-                    out.flush();
-                }
-                else if (command[0].equals("turn") && command[1].equals("off")){
-                    msg = parsing.bulkStringToResp("Closing Connection");
-                    out.write(msg.getBytes());
-                    out.flush();
-                    break;
+                    out_socket.println("We'll try to update the map in a bit!");
+                    storageEngine.queue.offer(command);
+                    System.out.println("[ClientThread] added delete command to the queue.");
                 }
                 else {
                     msg = parsing.bulkStringToResp("You sent a message with an incorrect format. Try again. \r\n Message: " + Arrays.toString(command));
