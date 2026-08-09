@@ -64,7 +64,6 @@ set "key longer than one word" "value longer than one word"
 - No log compaction
 - Static cluster membership
 - Gateway single point of failure
-- RESP parsing is line based and not length based
 
 
 
