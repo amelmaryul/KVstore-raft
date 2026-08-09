@@ -113,7 +113,7 @@ public class Parsing {
         byte[] newBuffer = new byte[len];
 
         if (!isBulkString){
-            String s = new String(buffer.buffer);
+            String s = new String(buffer.buffer, 0, buffer.offset);
             int idx = s.indexOf("\r\n");
             s = s.substring(idx+2);
             byte[] b = s.getBytes();
@@ -125,7 +125,7 @@ public class Parsing {
             return newBuffer;
         }
 
-        String s = new String(buffer.buffer);
+        String s = new String(buffer.buffer, 0, buffer.offset);
         s = s.substring(s.indexOf("\r\n")+2);
         s = s.substring(s.indexOf("\r\n")+2);
         byte[] b = s.getBytes();
@@ -146,16 +146,7 @@ public class Parsing {
         
 
         for (int i = 0; i < messageLen; i++){ // yeah its kille
-            res[i] = parseRespValue(in, buffer);
-            System.out.printf("%d element added is: %s\n",i+1, res[i]);
-            // trim off
-            // for nested baddies this dont work. 
-            // in the nested world. you end up trimming 2 times in a row
-            if (buffer.stack > 1 && i + 1 == messageLen) continue;
-            char c = buffer.respType.charAt(0);
-            if (c == '$') buffer.buffer = trimBuffer(buffer, true);
-            else buffer.buffer = trimBuffer(buffer, false);
-
+            res[i] = (String) parseRespValue(in, buffer); // might be broken for nested arrays lol
         }
 
 
@@ -164,7 +155,7 @@ public class Parsing {
     }
 
 
-    public String parseRespValue(BufferedInputStream in, RespBuffer buffer) throws Exception {
+    public Object parseRespValue(BufferedInputStream in, RespBuffer buffer) throws Exception {
         getRespType(in, buffer);
         return handleRespTypeCase(in, buffer, buffer.respType);
     }
@@ -176,10 +167,12 @@ public class Parsing {
 
         boolean foundNurse = false;
 
-        System.out.printf("State of bytes inside buffer rn: %s\n", sb.toString());
+        if (sb.toString().contains("\r\n")) foundNurse = true;
 
         while (!foundNurse){
+            System.out.println("[getRespType] about to block on read, offset=" + buffer.offset);
             bytesRead = in.read(buffer.buffer, buffer.offset, buffer.size - buffer.offset);
+            System.out.println("[getRespType] read returned bytesRead=" + bytesRead);
             if (bytesRead == -1) {
                 if (sb.toString().contains("\r\n")) {
                     foundNurse = true;
@@ -238,6 +231,7 @@ public class Parsing {
 
         String bulkString = new String(buffer.buffer).substring(buffer.respType.length() +2, buffer.respType.length() + 2 + buffer.messageLen);
         //String bulkString = sb.toString().split("\r\n")[0];
+        buffer.buffer = trimBuffer(buffer, true);
         return bulkString;
 
 
@@ -263,7 +257,7 @@ public class Parsing {
     }
 
 
-    public String handleRespTypeCase(BufferedInputStream in, RespBuffer buffer, String respType) throws Exception {
+    public Object handleRespTypeCase(BufferedInputStream in, RespBuffer buffer, String respType) throws Exception {
         if (!isRespTypeValid(respType)) throw new Exception("Invalid RespType");
         char c = respType.charAt(0);
         switch (c){
@@ -273,13 +267,15 @@ public class Parsing {
                 return String.valueOf(parseRespInteger(in, buffer));
                 // call parse integers
             case '+':
+                buffer.buffer = trimBuffer(buffer, false);
                 return buffer.respType;
                 // parse simple message
             case '*':
                 // call parse arrays
-                return Arrays.toString(handleRespArray(in, buffer));
+                return handleRespArray(in, buffer);
             case '-':
                 // idk
+                buffer.buffer = trimBuffer(buffer, false);
                 return buffer.respType;
             
             default:
@@ -294,9 +290,17 @@ public class Parsing {
         char sign = buffer.respType.charAt(1);
         System.out.printf("///////////////////////////////////////////////// Sign: %c\n", sign);
 
-        if (sign == '+') return Long.valueOf(buffer.respType.substring(1));
+        if (sign == '+'){
+            long res = Long.valueOf(buffer.respType.substring(1));
+            buffer.buffer = trimBuffer(buffer, false);
+            return res;
+        } 
 
-        if (sign == '-') return Long.valueOf(buffer.respType.substring(1));
+        if (sign == '-'){
+            long res = Long.valueOf(buffer.respType.substring(1));
+            buffer.buffer = trimBuffer(buffer, false);
+            return res;
+        } 
 
         throw new Exception("Invalid Resp integer");
     }
