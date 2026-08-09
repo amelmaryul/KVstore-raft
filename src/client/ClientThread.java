@@ -51,7 +51,11 @@ public class ClientThread implements Runnable {
                     out.flush();
                 }
                 else if (command[0].equals("get")){
-                    msg = parsing.bulkStringToResp(storageEngine.get(command[1]));
+                    msg = storageEngine.get(command[1]);
+                    if (msg == null){
+                        msg = parsing.bulkStringToResp("Error: Key does not exist");
+                    }
+                    else msg = parsing.bulkStringToResp(msg);
                     out.write(msg.getBytes());
                     out.flush();
                 }
