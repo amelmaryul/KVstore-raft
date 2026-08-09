@@ -120,7 +120,11 @@ class HeartbeatWorker implements Runnable {
                 }
 
             } catch (Exception e){
-                e.printStackTrace();
+                try {
+                    Thread.sleep(300);
+                } catch (Exception ex) {
+                    // TODO: handle exception
+                }
             }
         }
 
