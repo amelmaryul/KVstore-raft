@@ -43,6 +43,11 @@ get <key>
 set <key> <value>
 delete <key>
 ```
+Keys or values longer then 1 must be wrapped in quotes:
+
+```text
+set "key longer than one word" "value longer than one word"
+```
 
 
 ## Features
@@ -53,6 +58,7 @@ delete <key>
 - TCP gateway
 - Docker Compose deployment
 - Thread-safe request handling
+- RESP based client communication 
 
 ## Known Limitations
 - No log compaction
