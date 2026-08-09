@@ -1,4 +1,4 @@
-# Distributed Key Value Store
+# Distributed Raft Key Value Store
 
 A distributed key value store written in Java implementing the Raft consensus algorithm for leader election and log replication. The project explores how distributed systems maintain consistency across multiple nodes while tolerating failures.
 ## Setup
