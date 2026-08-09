@@ -3,46 +3,58 @@ import java.io.*;
 import java.net.Socket;
 import java.util.Scanner;
 
+import rpc.Message;
 import util.Parsing;
+import util.RespBuffer;
 
 public class Client {
+
+    Parsing parsing = new Parsing();
+
 
     // Constructor that establishes a connection with the server
     Client(int port) throws IOException {
 
-        // Create a socket to connect to the server running on localhost and port 2020
-        Socket socket = new Socket("localhost", port);
-        System.out.println("Successfully connected to the server.");
+        try {
+            // Create a socket to connect to the server running on localhost and port 2020
+            Socket socket = new Socket("localhost", port);
+            System.out.println("Successfully connected to the server.");
 
-        // Input stream to receive messages from the server
-        BufferedReader in_socket = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            BufferedInputStream in = new BufferedInputStream(socket.getInputStream());
+            BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream());
 
-        // Output stream to send messages to the server
-        PrintWriter out_socket = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true);
 
-        // Read the message from the server and print it to the console
-        String message = in_socket.readLine();
-        System.out.println("Server says: " + message);
 
-        
-        Scanner scanner = new Scanner(System.in);
-        while (true){
-            System.out.println("Enter what you want to send to server");
-            String message2 = scanner.nextLine();
-            String respString = Parsing.parseCommandString(message2);
-            // Send a message back to the server to acknowledge the message
-            out_socket.println(respString);
+            RespBuffer buffer = new RespBuffer(1024);
+            String msg = (String) parsing.parseRespValue(in, buffer);
+            System.out.println("Server says: " + msg);
 
-            message = in_socket.readLine();
+            Scanner scanner = new Scanner(System.in);
 
-            System.out.println("Server says: " + message);
-            if (message.equals("Closing Connection")) break;
-        }   
+            while (true){
+                System.out.println("Enter what you want to send to the server");
+                msg = scanner.nextLine();
+                msg = parsing.generateRespString(msg);
+                System.out.println("What you're gonna send to the server: " + msg);
+                out.write(msg.getBytes());
+                out.flush();
+                System.out.println("Message Sent!");
 
-        // Close the socket connection after communication
-        socket.close();
-        System.out.println("Connection Closed");
-        scanner.close();
+                msg = (String) parsing.parseRespValue(in, buffer);
+                System.out.println("Server says: " + msg);
+                if (msg.equals("Closing Connection")) break;
+            }
+
+            // Close the socket connection after communication
+            socket.close();
+            System.out.println("Connection Closed");
+            scanner.close();
+
+
+        } catch (Exception e) {
+            System.out.println("Unexpected error occured");
+        }
+
 
     }
 
