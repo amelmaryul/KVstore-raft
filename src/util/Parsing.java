@@ -170,9 +170,7 @@ public class Parsing {
         if (sb.toString().contains("\r\n")) foundNurse = true;
 
         while (!foundNurse){
-            System.out.println("[getRespType] about to block on read, offset=" + buffer.offset);
             bytesRead = in.read(buffer.buffer, buffer.offset, buffer.size - buffer.offset);
-            System.out.println("[getRespType] read returned bytesRead=" + bytesRead);
             if (bytesRead == -1) {
                 if (sb.toString().contains("\r\n")) {
                     foundNurse = true;

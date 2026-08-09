@@ -45,9 +45,7 @@ public class ClientThread implements Runnable {
                 String[] command = (String[]) parsing.parseRespValue(in, buffer);
                 System.out.println("String command received");
                 if (command[0].equals("set")){
-                    System.out.println("I recieved a set command");
                     storageEngine.queue.offer(command);
-                    System.out.println("[ClientThread] added set command to the queue.");
                     msg = parsing.bulkStringToResp("Added Set command");
                     out.write(msg.getBytes());
                     out.flush();

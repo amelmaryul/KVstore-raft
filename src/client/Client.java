@@ -35,10 +35,8 @@ public class Client {
                 System.out.println("Enter what you want to send to the server");
                 msg = scanner.nextLine();
                 msg = parsing.generateRespString(msg);
-                System.out.println("What you're gonna send to the server: " + msg);
                 out.write(msg.getBytes());
                 out.flush();
-                System.out.println("Message Sent!");
 
                 msg = (String) parsing.parseRespValue(in, buffer);
                 System.out.println("Server says: " + msg);
