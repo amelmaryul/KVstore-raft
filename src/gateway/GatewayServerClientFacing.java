@@ -1,14 +1,8 @@
 package gateway;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Arrays;
-import java.util.Scanner;
 
 import util.Parsing;
 import util.RespBuffer;
@@ -57,6 +51,11 @@ public class GatewayServerClientFacing {
                 while (!closeConnection){
                     String[] command = (String[]) parsing.parseRespValue(clientIn, clientBuffer);
                     msg = parsing.arrayToRespArray(command);
+                    if (command[0].equals("Leader")){
+                        clientOut.write(parsing.bulkStringToResp(gateway.getLeaderId()).getBytes());
+                        clientOut.flush();
+                        continue;
+                    }
                     clusterOut.write(msg.getBytes());
                     clusterOut.flush();
                     msg = (String) parsing.parseRespValue(clusterIn, clusterBuffer);

@@ -3,8 +3,6 @@ package client;
 import java.net.Socket;
 import java.util.Arrays;
 import java.io.*;
-import java.util.List;
-import java.util.concurrent.LinkedBlockingQueue;
 
 import storage.StorageEngine;
 import util.Parsing;
@@ -60,9 +58,15 @@ public class ClientThread implements Runnable {
                     out.flush();
                 }
                 else if (command[0].equals("delete")){
-                    out_socket.println("We'll try to update the map in a bit!");
+                    //out.pr("We'll try to update the map in a bit!");
+                    msg = storageEngine.get(command[1]);
+                    if (msg == null){
+                        msg = parsing.bulkStringToResp("Error: Key does not exist");
+                    }
+                    else msg = parsing.bulkStringToResp(msg);
+                    out.write(msg.getBytes());
+                    out.flush();
                     storageEngine.queue.offer(command);
-                    System.out.println("[ClientThread] added delete command to the queue.");
                 }
                 else {
                     msg = parsing.bulkStringToResp("You sent a message with an incorrect format. Try again. \r\n Message: " + Arrays.toString(command));
@@ -76,9 +80,14 @@ public class ClientThread implements Runnable {
             
 
             // Close the socket connection
-            socket.close();
-            System.out.println("Socket: " + this.id + " terminated connection");
         } catch (Exception e){
+            try {
+                socket.close();
+            } catch (IOException e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+            }
+            System.out.println("Socket: " + this.id + " terminated connection");
             e.printStackTrace();
         }
     }
