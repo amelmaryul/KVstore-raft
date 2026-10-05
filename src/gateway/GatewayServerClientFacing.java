@@ -1,6 +1,7 @@
 package gateway;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -17,7 +18,7 @@ public class GatewayServerClientFacing {
     }
 
 
-    public void start(){
+    public void start() {
         try {
             server = new ServerSocket(5051);
         } catch (Exception e) {
@@ -26,10 +27,15 @@ public class GatewayServerClientFacing {
 
 
         while (true){
+            Socket clientSocket = null;
+            BufferedInputStream clientIn = null;
+            BufferedOutputStream clientOut = null;
+
+
             try {
-                Socket clientSocket = server.accept();
-                BufferedInputStream clientIn = new BufferedInputStream(clientSocket.getInputStream());
-                BufferedOutputStream clientOut = new BufferedOutputStream(clientSocket.getOutputStream());
+                clientSocket = server.accept();
+                clientIn = new BufferedInputStream(clientSocket.getInputStream());
+                clientOut = new BufferedOutputStream(clientSocket.getOutputStream());
 
                 Socket clusterSocket = new Socket(gateway.getLeaderId(), 5050); 
                 BufferedInputStream clusterIn = new BufferedInputStream(clusterSocket.getInputStream());
@@ -72,6 +78,27 @@ public class GatewayServerClientFacing {
 
             } catch (Exception e) {
                 e.printStackTrace();
+                RespBuffer clientBuffer = new RespBuffer(1024);
+                String msg = parsing.bulkStringToResp("Error: Electing new Leader");
+                try {
+                    clientOut.write(msg.getBytes());
+                    clientOut.flush();
+                    String[] command = (String[]) parsing.parseRespValue(clientIn, clientBuffer);
+                    msg = parsing.arrayToRespArray(command);
+                    if (command[0].equals("Leader")){
+                        clientOut.write(parsing.bulkStringToResp(gateway.getLeaderId()).getBytes());
+                        clientOut.flush();
+                    }
+                    else {
+                        clientOut.write(parsing.bulkStringToResp("Closing connection").getBytes());
+                        clientOut.flush();
+                    }
+                    clientSocket.close();
+                    
+                } catch (Exception ee) {
+                    // TODO: handle exception
+                    ee.printStackTrace();
+                }
             }
 
             
