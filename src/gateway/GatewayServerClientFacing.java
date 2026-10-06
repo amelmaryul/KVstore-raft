@@ -1,9 +1,10 @@
 package gateway;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketAddress;
 
 import util.Parsing;
 import util.RespBuffer;
@@ -37,7 +38,9 @@ public class GatewayServerClientFacing {
                 clientIn = new BufferedInputStream(clientSocket.getInputStream());
                 clientOut = new BufferedOutputStream(clientSocket.getOutputStream());
 
-                Socket clusterSocket = new Socket(gateway.getLeaderId(), 5050); 
+                Socket clusterSocket = new Socket(); 
+                SocketAddress socketAddress = new InetSocketAddress(gateway.getLeaderId(), 5050);
+                clusterSocket.connect(socketAddress, 1000);
                 BufferedInputStream clusterIn = new BufferedInputStream(clusterSocket.getInputStream());
                 BufferedOutputStream clusterOut = new BufferedOutputStream(clusterSocket.getOutputStream());
 
@@ -96,7 +99,6 @@ public class GatewayServerClientFacing {
                     clientSocket.close();
                     
                 } catch (Exception ee) {
-                    // TODO: handle exception
                     ee.printStackTrace();
                 }
             }

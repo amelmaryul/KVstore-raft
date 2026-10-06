@@ -1,8 +1,6 @@
 package gateway;
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -25,6 +23,7 @@ public class GatewayServer {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 gateway.setLeaderId(reader.readLine());
                 System.err.println("Current Leader: " + gateway.getLeaderId());
+                socket.close();
             }
 
 

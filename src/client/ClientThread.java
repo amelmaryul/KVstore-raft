@@ -69,7 +69,7 @@ public class ClientThread implements Runnable {
                     storageEngine.queue.offer(command);
                 }
                 else {
-                    msg = parsing.bulkStringToResp("You sent a message with an incorrect format. Try again. \r\n Message: " + Arrays.toString(command));
+                    msg = parsing.bulkStringToResp("You sent a message with an incorrect format. Try again. \n Message: " + Arrays.toString(command));
                     out.write(msg.getBytes());
                     out.flush();
                 }

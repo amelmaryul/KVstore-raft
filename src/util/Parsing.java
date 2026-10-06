@@ -144,7 +144,9 @@ public class Parsing {
                 if (sb.toString().contains("\r\n")) {
                     foundNurse = true;
                 }
-                else throw new Exception("Empty input stream before valid resp string");
+                else {
+                    throw new Exception("Empty input stream before valid resp string");
+                } 
 
             }
             else {

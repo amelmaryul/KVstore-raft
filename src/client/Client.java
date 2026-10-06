@@ -46,7 +46,7 @@ public class Client {
 
             // Close the socket connection after communication
             socket.close();
-            System.out.println("Connection Closed");
+            //System.out.println("Connection Closed");
             scanner.close();
 
 
