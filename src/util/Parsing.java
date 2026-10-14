@@ -73,10 +73,6 @@ public class Parsing {
 
 
 
-    // parsing resp string into a command logic below
-
-    // currently impure bcs it edits RespBuffer resp. 
-    // not only is this stupidi fuckign idiot impure it also cant parse simple strings you silly silly silly baka ! 
     public byte[] trimBuffer(RespBuffer buffer, boolean isBulkString){
         int len = buffer.buffer.length;
         byte[] newBuffer = new byte[len];
@@ -114,8 +110,8 @@ public class Parsing {
         buffer.buffer = trimBuffer(buffer, false);
         
 
-        for (int i = 0; i < messageLen; i++){ // yeah its kille
-            res[i] = (String) parseRespValue(in, buffer); // might be broken for nested arrays lol
+        for (int i = 0; i < messageLen; i++){ 
+            res[i] = (String) parseRespValue(in, buffer); 
         }
 
 
@@ -182,8 +178,8 @@ public class Parsing {
     public String parseBulkString(BufferedInputStream in, RespBuffer buffer) throws Exception {
         int n = 0;
         StringBuilder sb = new StringBuilder();
-        int expectedSize = buffer.messageLen + 2; // what if the buffer alr has values inside!!! 
-        int diff = buffer.offset - (buffer.respType.length() + 2); // wtf was i trying to do here!
+        int expectedSize = buffer.messageLen + 2; 
+        int diff = buffer.offset - (buffer.respType.length() + 2); 
         expectedSize -= diff;
 
 
@@ -199,7 +195,6 @@ public class Parsing {
 
 
         String bulkString = new String(buffer.buffer).substring(buffer.respType.length() +2, buffer.respType.length() + 2 + buffer.messageLen);
-        //String bulkString = sb.toString().split("\r\n")[0];
         buffer.buffer = trimBuffer(buffer, true);
         return bulkString;
 
@@ -215,7 +210,6 @@ public class Parsing {
             return false;
         }
         int size = Integer.valueOf(s.substring(1, idx));
-        String ss = s.substring(idx, size + 2 + idx); // i enforce the size to be true here. if it was bigger i wouldnt catch it. 
 
         if (!s.substring(size + 2 + idx, size + 4 + idx).equals("\r\n")) {
             System.out.println("Size mismatch");
@@ -257,7 +251,6 @@ public class Parsing {
 
     public long parseRespInteger(BufferedInputStream in, RespBuffer buffer) throws Exception {
         char sign = buffer.respType.charAt(1);
-        System.out.printf("///////////////////////////////////////////////// Sign: %c\n", sign);
 
         if (sign == '+'){
             long res = Long.valueOf(buffer.respType.substring(1));
@@ -276,9 +269,7 @@ public class Parsing {
     
 
 
-    // i just want to return a command array ok. 
     public String readBulkString(BufferedInputStream in, RespBuffer buf) throws Exception{
-        int bufferSize = 1024;
         int bytesRead = 0;
 
         StringBuilder sb = new StringBuilder();
@@ -298,24 +289,22 @@ public class Parsing {
         String s = sb.toString().substring(0, idx);
         return s;
 
-        //return handleBuildString(in, buf, sb);
     }
 
     public void typeOfString(String s){
         if (s.charAt(0) == '$'){ // bulk string
-            // ohhh set state as bulk strign me thinks
         }
     }
 
     public String handleBuildString(BufferedInputStream in, RespBuffer buffer, StringBuilder sb) throws Exception {
         String s = sb.toString();
         int idx = s.indexOf("\r\n");
-        if (idx == -1) throw new Error("No registered nurse"); // error here maybe throw something idk
+        if (idx == -1) throw new Error("No registered nurse"); 
         int respLen = Integer.valueOf(s.substring(1, idx));
         int currLen = s.substring(idx).length();
         int bytesRread = 0;
 
-        while (currLen < respLen){ // or until it hits a registered nurse
+        while (currLen < respLen){ 
             bytesRread = in.read(buffer.buffer, buffer.offset, buffer.size);
             if (bytesRread == -1) {
                 throw new Error("Some error while reading bytes");
@@ -325,7 +314,7 @@ public class Parsing {
 
         }
 
-        String res = sb.substring(1 + respLen + 2); // this should include the new line i think? not sure
+        String res = sb.substring(1 + respLen + 2); 
         in.close();
         return res;
     }
@@ -346,13 +335,11 @@ public class Parsing {
 
     private static String[] buildArray(String message){
 
-        // resp string should either start as set get or delete so i only have to consider these 3
 
         String[] roughParse = message.split(" ");
-        if (roughParse[0].equals("get")) return new String[]{roughParse[0], roughParse[1]}; // case if its a get call
-        if (roughParse[0].equals("delete")) return new String[]{roughParse[0], roughParse[1]}; // case if its a delete call
+        if (roughParse[0].equals("get")) return new String[]{roughParse[0], roughParse[1]}; 
+        if (roughParse[0].equals("delete")) return new String[]{roughParse[0], roughParse[1]};
 
-        // this part of code handles set calls. this assumes key set can only be one word
         StringBuilder sb = new StringBuilder();
 
         for (int i = 2; i < roughParse.length -1; i++){
@@ -365,14 +352,7 @@ public class Parsing {
     }
 
 
-    /*
-    Takes a command string and checks if its valid. 
-    
-    This method guarentees command strings start with either set, get or delete
-    it ensures get and sets commands consist of exactly 2 words
 
-    it also ensures that set commands are more then 2 words so 3 or more
-    */
     private static boolean isValidCommand(String message){
         if (message == null) return false;
         String[] roughString = message.split(" ");
@@ -394,11 +374,6 @@ public class Parsing {
     }
 
 
-    /*
-    Takes a command in the form of an array
-    builds a resp string from the array
-    Note: this only builds respstrings that start with * and assumes every value is a string
-    */
     public static String buildRespString(String[] message){
         StringBuilder sb = new StringBuilder();
         sb.append("*" + String.valueOf(message.length) + "\r\n");
