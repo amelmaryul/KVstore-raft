@@ -1,0 +1,68 @@
+#!/bin/bash
+
+get_container () {
+    temp=$(echo -n "$old_leader" | tail -c 1 )
+    case $temp in
+        5)
+        container="kvstore-raft-node5-1"
+        ;;
+        4)
+        container="kvstore-raft-node4-1"
+        ;;
+        3)
+        container="kvstore-raft-node3-1"
+        ;;
+        2)
+        container="kvstore-raft-node2-1"
+        ;;
+        1)
+        container="kvstore-raft-node1-1"
+        ;;
+
+        *)
+        echo "invalid container"
+    esac
+}
+
+start_time () {
+    start_t=$(date +"%s%3N")
+
+}
+
+end_time () {
+    end_t=$(date +"%s%3N")
+}
+
+t=0
+
+case $1 in
+    election)
+    # get the leaders container id and stop that container
+    # keep on looping over the gateway until a new leader is elected
+    # once leader is elected stop time and restart the killed node
+    s=$(date +"%s")
+    for i in {1..20}; do
+        old_leader=$(./kvstore.sh client <<< "Leader" | grep 'Server says' | tail -n 1 | awk '{print $3}')
+        get_container
+        start_time
+        docker kill "$container" > /dev/null
+        echo -n "Value of old leader: "
+        echo "$old_leader"
+        new_leader=$(./kvstore.sh client <<< "Leader" | grep 'Server says' | tail -n 1 | awk '{print $3}')
+        echo -n "Value of new leader: "
+        echo "$new_leader"
+        while [[ "$new_leader" == "$old_leader" ]]; do
+            new_leader=$(./kvstore.sh client <<< "Leader" | grep 'Server says' | tail -n 1 | awk '{print $3}')
+            echo -n "Value of new leader: "
+            echo "$new_leader"
+        done
+        end_time
+        echo $(("$end_t" - "$start_t"))
+        docker start "$container" > /dev/null
+        sleep 5
+    done
+    total_time=$(date +"%s")
+    echo -n "Time taken in seconds: "
+    echo $(("$total_time" - "$s"))
+    ;;
+esac
