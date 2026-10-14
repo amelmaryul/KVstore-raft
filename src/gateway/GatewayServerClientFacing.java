@@ -1,14 +1,10 @@
 package gateway;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Arrays;
-import java.util.Scanner;
+import java.net.SocketAddress;
 
 import util.Parsing;
 import util.RespBuffer;
@@ -23,7 +19,7 @@ public class GatewayServerClientFacing {
     }
 
 
-    public void start(){
+    public void start() {
         try {
             server = new ServerSocket(5051);
         } catch (Exception e) {
@@ -32,12 +28,19 @@ public class GatewayServerClientFacing {
 
 
         while (true){
-            try {
-                Socket clientSocket = server.accept();
-                BufferedInputStream clientIn = new BufferedInputStream(clientSocket.getInputStream());
-                BufferedOutputStream clientOut = new BufferedOutputStream(clientSocket.getOutputStream());
+            Socket clientSocket = null;
+            BufferedInputStream clientIn = null;
+            BufferedOutputStream clientOut = null;
 
-                Socket clusterSocket = new Socket(gateway.getLeaderId(), 5050); 
+
+            try {
+                clientSocket = server.accept();
+                clientIn = new BufferedInputStream(clientSocket.getInputStream());
+                clientOut = new BufferedOutputStream(clientSocket.getOutputStream());
+
+                Socket clusterSocket = new Socket(); 
+                SocketAddress socketAddress = new InetSocketAddress(gateway.getLeaderId(), 5050);
+                clusterSocket.connect(socketAddress, 1000);
                 BufferedInputStream clusterIn = new BufferedInputStream(clusterSocket.getInputStream());
                 BufferedOutputStream clusterOut = new BufferedOutputStream(clusterSocket.getOutputStream());
 
@@ -57,6 +60,11 @@ public class GatewayServerClientFacing {
                 while (!closeConnection){
                     String[] command = (String[]) parsing.parseRespValue(clientIn, clientBuffer);
                     msg = parsing.arrayToRespArray(command);
+                    if (command[0].equals("Leader")){
+                        clientOut.write(parsing.bulkStringToResp(gateway.getLeaderId()).getBytes());
+                        clientOut.flush();
+                        continue;
+                    }
                     clusterOut.write(msg.getBytes());
                     clusterOut.flush();
                     msg = (String) parsing.parseRespValue(clusterIn, clusterBuffer);
@@ -73,6 +81,26 @@ public class GatewayServerClientFacing {
 
             } catch (Exception e) {
                 e.printStackTrace();
+                RespBuffer clientBuffer = new RespBuffer(1024);
+                String msg = parsing.bulkStringToResp("Error: Electing new Leader");
+                try {
+                    clientOut.write(msg.getBytes());
+                    clientOut.flush();
+                    String[] command = (String[]) parsing.parseRespValue(clientIn, clientBuffer);
+                    msg = parsing.arrayToRespArray(command);
+                    if (command[0].equals("Leader")){
+                        clientOut.write(parsing.bulkStringToResp(gateway.getLeaderId()).getBytes());
+                        clientOut.flush();
+                    }
+                    else {
+                        clientOut.write(parsing.bulkStringToResp("Closing connection").getBytes());
+                        clientOut.flush();
+                    }
+                    clientSocket.close();
+                    
+                } catch (Exception ee) {
+                    ee.printStackTrace();
+                }
             }
 
             

@@ -3,7 +3,6 @@ import java.io.*;
 import java.net.Socket;
 import java.util.Scanner;
 
-import rpc.Message;
 import util.Parsing;
 import util.RespBuffer;
 
@@ -34,6 +33,7 @@ public class Client {
             while (true){
                 System.out.println("Enter what you want to send to the server");
                 msg = scanner.nextLine();
+                String msg2 = msg;
                 msg = parsing.generateRespString(msg);
                 out.write(msg.getBytes());
                 out.flush();
@@ -41,11 +41,12 @@ public class Client {
                 msg = (String) parsing.parseRespValue(in, buffer);
                 System.out.println("Server says: " + msg);
                 if (msg.equals("Closing Connection")) break;
+                if (msg2.equals("Leader")) break;
             }
 
             // Close the socket connection after communication
             socket.close();
-            System.out.println("Connection Closed");
+            //System.out.println("Connection Closed");
             scanner.close();
 
 
