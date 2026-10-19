@@ -37,6 +37,7 @@ t=0
 
 case $1 in
     election)
+    > ./bench/results/election.csv
     # get the leaders container id and stop that container
     # keep on looping over the gateway until a new leader is elected
     # once leader is elected stop time and restart the killed node
@@ -57,7 +58,7 @@ case $1 in
             echo "$new_leader"
         done
         end_time
-        echo $(("$end_t" - "$start_t"))
+        echo $(("$end_t" - "$start_t")) >> ./bench/results/election.csv 
         docker start "$container" > /dev/null
         sleep 5
     done
@@ -65,4 +66,5 @@ case $1 in
     echo -n "Time taken in seconds: "
     echo $(("$total_time" - "$s"))
     ;;
+
 esac
