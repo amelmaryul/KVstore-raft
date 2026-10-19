@@ -67,4 +67,14 @@ case $1 in
     echo $(("$total_time" - "$s"))
     ;;
 
+
+    correctness)
+    for i in {1..20}; do 
+        ./kvstore.sh client << EOF
+set $i $i
+EOF
+    done
+
+    ;;
+
 esac
