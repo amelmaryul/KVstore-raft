@@ -30,6 +30,7 @@ public class Client {
             System.out.println("Server says: " + msg);
 
             Scanner scanner = new Scanner(System.in);
+            boolean sendingLeader = false;
 
             while (true){
                 System.out.println("Enter what you want to send to the server");
@@ -37,10 +38,11 @@ public class Client {
                 msg = parsing.generateRespString(msg);
                 out.write(msg.getBytes());
                 out.flush();
+                if (msg.equals("*1\r\n$6\r\nLeader\r\n")) sendingLeader = true;
 
                 msg = (String) parsing.parseRespValue(in, buffer);
                 System.out.println("Server says: " + msg);
-                if (msg.equals("Closing Connection")) break;
+                if (msg.equals("Closing Connection") || sendingLeader) break;
             }
 
             // Close the socket connection after communication

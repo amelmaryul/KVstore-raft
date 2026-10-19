@@ -60,7 +60,8 @@ public class ClientThread implements Runnable {
                     out.flush();
                 }
                 else if (command[0].equals("delete")){
-                    out_socket.println("We'll try to update the map in a bit!");
+                    out.write(parsing.bulkStringToResp("We'll try to update map in a bit!").getBytes());
+                    out.flush();
                     storageEngine.queue.offer(command);
                     System.out.println("[ClientThread] added delete command to the queue.");
                 }
@@ -72,12 +73,6 @@ public class ClientThread implements Runnable {
                 System.out.println("Client says " + Arrays.toString(command));
 
             }
-
-            
-
-            // Close the socket connection
-            socket.close();
-            System.out.println("Socket: " + this.id + " terminated connection");
         } catch (Exception e){
             e.printStackTrace();
         }
