@@ -13,11 +13,13 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import storage.FileStore;
 import storage.StorageEngine;
+import util.PendingWrite;
 
 public class RaftNode {
 
@@ -87,8 +89,12 @@ public class RaftNode {
         new Thread(() -> {
             try{
                 while (true){
-                    String[] command = storageEngine.queue.take();
-                    logManager.append(new LogEntry(command, raftState.getCurrentTerm(), logManager.size()));
+                    PendingWrite pw = storageEngine.queue.take();
+                    synchronized (logManager.lock){
+                        int idx = logManager.size();
+                        storageEngine.pending.put(idx, pw.applied);
+                        logManager.append(new LogEntry(pw.command, raftState.getCurrentTerm(), idx));
+                    }
                 }
             } catch (Exception e){
                 e.printStackTrace();
@@ -105,10 +111,16 @@ public class RaftNode {
                         String[] command = entry.command;
 
                         if (command[0].equals("set")) {
+                        // i need to complete the bomba boy here. 
                             storageEngine.set(command[1], command[2]);
+                            CompletableFuture<Void> f = storageEngine.pending.remove(logManager.getLastApplied() +1);
+                            if (f!= null) f.complete(null);
                             System.out.println("[Local Replicaotn Manager] Updated RSM");
                         } else if (command[0].equals("delete")) {
                             storageEngine.delete(command[1]);
+                            CompletableFuture<Void> f = storageEngine.pending.remove(logManager.getLastApplied() +1);
+                            if (f!= null) f.complete(null);
+                            System.out.println("[Local Replication Manager] update rsm with a delete");
                         }
 
                         logManager.setLastApplied(logManager.getLastApplied() + 1); 

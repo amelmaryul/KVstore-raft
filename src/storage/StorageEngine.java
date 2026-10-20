@@ -1,12 +1,16 @@
 package storage;
 
 import java.io.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import util.PendingWrite;
+
 public class StorageEngine {
    private ConcurrentHashMap<String, String> store = new ConcurrentHashMap<>(); 
-   public final LinkedBlockingQueue<String[]> queue = new LinkedBlockingQueue<>(); // what is this for again i forget lol
+   public final LinkedBlockingQueue<PendingWrite> queue = new LinkedBlockingQueue<>(); // what is this for again i forget lol
+   public final ConcurrentHashMap<Integer, CompletableFuture<Void>> pending = new ConcurrentHashMap<>();
 
 
    public static final StorageEngine instance = new StorageEngine();

@@ -5,7 +5,7 @@ import java.util.List;
 import storage.FileStore;
 
 public class LogManager{
-    
+
     private List<LogEntry> log = new ArrayList<>();
     private volatile int committedIndex = 0;
     private int lastApplied = 0;

@@ -5,9 +5,11 @@ import java.util.Arrays;
 import java.io.*;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import storage.StorageEngine;
 import util.Parsing;
+import util.PendingWrite;
 import util.RespBuffer;
 
 public class ClientThread implements Runnable {
@@ -45,10 +47,22 @@ public class ClientThread implements Runnable {
                 String[] command = (String[]) parsing.parseRespValue(in, buffer);
                 System.out.println("String command received");
                 if (command[0].equals("set")){
-                    storageEngine.queue.offer(command);
-                    msg = parsing.bulkStringToResp("Added Set command");
-                    out.write(msg.getBytes());
-                    out.flush();
+                    PendingWrite pw = new PendingWrite(command);
+                    storageEngine.queue.offer(pw);
+
+                    try {
+                        pw.applied.get(30, TimeUnit.SECONDS);
+                        msg = parsing.bulkStringToResp("Added Set command");
+                        out.write(msg.getBytes());
+                        out.flush();
+
+                    } catch (Exception e) {
+                        msg = parsing.bulkStringToResp("Failed adding set command");
+                        out.write(msg.getBytes());
+                        out.flush();
+
+                    }
+
                 }
                 else if (command[0].equals("get")){
                     msg = storageEngine.get(command[1]);
@@ -62,7 +76,20 @@ public class ClientThread implements Runnable {
                 else if (command[0].equals("delete")){
                     out.write(parsing.bulkStringToResp("We'll try to update map in a bit!").getBytes());
                     out.flush();
-                    storageEngine.queue.offer(command);
+                    PendingWrite pw = new PendingWrite(command);
+                    storageEngine.queue.offer(pw);
+                    try {
+                        pw.applied.get(30, TimeUnit.SECONDS);
+                        msg = parsing.bulkStringToResp("Added delete command");
+                        out.write(msg.getBytes());
+                        out.flush();
+
+                    } catch (Exception e) {
+                        msg = parsing.bulkStringToResp("Failed adding delete command");
+                        out.write(msg.getBytes());
+                        out.flush();
+
+                    }
                     System.out.println("[ClientThread] added delete command to the queue.");
                 }
                 else {
