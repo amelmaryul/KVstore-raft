@@ -33,6 +33,13 @@ end_time () {
     end_t=$(date +"%s%3N")
 }
 
+write_key () {
+        ./kvstore.sh client << EOF
+set 1 2
+EOF
+    
+}
+
 t=0
 
 case $1 in
@@ -69,12 +76,24 @@ case $1 in
 
 
     correctness)
+    acks=()
     for i in {1..20}; do 
-        ./kvstore.sh client << EOF
-set $i $i
-EOF
+        if (( i % 2 == 0)); then
+            old_leader=$(./kvstore.sh client <<< "Leader" | grep 'Server says' | tail -n 1 | awk '{print $3}')
+        else 
+            old_leader=$(( RANDOM % 5 + 1 ))
+        fi
+        get_container
+        docker kill "$container" > /dev/null
+        sleep 3
+        ack=$(write_key | grep "Server says:" | tail -1)
+        if [[ $ack == "Server says: Added Set command" ]]; then
+            acks+=("$ack")
+        fi
+        sleep 1
+        docker start "$container" > /dev/null
     done
-
+    echo "${acks[@]}"
     ;;
 
 esac
