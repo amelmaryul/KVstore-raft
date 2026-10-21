@@ -35,9 +35,16 @@ end_time () {
 
 write_key () {
         ./kvstore.sh client << EOF
-set 1 2
+set $i $i
 EOF
     
+}
+
+
+get_key () {
+        ./kvstore.sh client << EOF
+get $key
+EOF
 }
 
 t=0
@@ -76,6 +83,7 @@ case $1 in
 
 
     correctness)
+    count=0
     acks=()
     for i in {1..20}; do 
         if (( i % 2 == 0)); then
@@ -88,12 +96,22 @@ case $1 in
         sleep 3
         ack=$(write_key | grep "Server says:" | tail -1)
         if [[ $ack == "Server says: Added Set command" ]]; then
-            acks+=("$ack")
+            acks+=("$i")
         fi
         sleep 1
         docker start "$container" > /dev/null
     done
-    echo "${acks[@]}"
+    for i in "${!acks[@]}"; do
+        key="${acks[i]}"
+        getk=$(get_key | grep "Server says:" | tail -1)
+        if [[ $getk != "Server says: Error: Key does not exist" ]]; then
+            ((count++))
+        fi
+
+    done
+    echo -n correctness under failure: 
+    echo -n  $(( count * 100 / "${#acks[@]}" ))
+    echo "%"
     ;;
 
 esac
