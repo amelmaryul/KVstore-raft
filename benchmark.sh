@@ -83,6 +83,13 @@ case $1 in
 
 
     correctness)
+    # note you may have to delete the current logs first. 
+
+    # check correctness under failure.
+    # take turns killing a random node and killing the leader node 
+    # try appending some key to the log. only keep track of keys that have been acknowleged from the cluster
+    # after seting all keys cross check if they keys were appended by attempting to get all keys. 
+    # should always work 100% of the time bcs of raft invariants. 
     count=0
     acks=()
     for i in {1..20}; do 
@@ -104,7 +111,7 @@ case $1 in
     for i in "${!acks[@]}"; do
         key="${acks[i]}"
         getk=$(get_key | grep "Server says:" | tail -1)
-        if [[ $getk != "Server says: Error: Key does not exist" ]]; then
+        if [[ $getk == "Server says: $key" ]]; then
             ((count++))
         fi
 
