@@ -116,9 +116,7 @@ case $1 in
         fi
 
     done
-    echo -n correctness under failure: 
-    echo -n  $(( count * 100 / "${#acks[@]}" ))
-    echo "%"
+    echo "acked=${#acks[@]} found=$count lost=$(( ${#acks[@]} - count ))"
     ;;
 
 esac
